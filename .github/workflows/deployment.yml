@@ -59,7 +59,7 @@ jobs:
       id: deploy-to-azure
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'trekk-api'  # Replace with your Azure App name
+        app-name: 'trekk-api'
         publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         package: ./publish
     
@@ -67,8 +67,7 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az webapp cors add --resource-group trekk-resources --name trekk-api --allowed-origins 'https://trekk.vercel.app'
-          # Replace 'https://trekk.vercel.app' with your Vercel app URL
+          az webapp cors add --resource-group trekk-resources --name trekk-api --allowed-origins 'https://trekk-seven.vercel.app'
 
   deploy_frontend:
     runs-on: ubuntu-latest
@@ -143,4 +142,4 @@ jobs:
     - name: Run E2E Tests
       run: npx playwright test
       env:
-        BASE_URL: https://trekk.vercel.app # Replace with your Vercel app URL
+        BASE_URL: https://trekk-seven.vercel.app 

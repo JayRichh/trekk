@@ -21,6 +21,7 @@
         </div>
       </div>
       
+      
       <!-- Trail info -->
       <div class="ml-3 flex-grow min-w-0">
         <!-- Trail name and difficulty badge -->
