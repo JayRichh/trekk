@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Trekk.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2e09c33db90ea4990cd5b4d2e3c3f0299dcdf12e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Trekk.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Trekk.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
