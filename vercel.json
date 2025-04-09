@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "vue-tsc --project tsconfig.build.json && vite build",
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [

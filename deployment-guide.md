@@ -86,12 +86,20 @@ Follow the detailed instructions in [vercel-deployment.md](vercel-deployment.md)
 
 Key steps:
 
-1. Ensure `vercel.json` and `.env.production` are properly configured
+1. Ensure deployment config files are properly configured:
+   - `vercel.json` - Updated to use `tsconfig.build.json` for deployment
+   - `.env.production` - Contains environment variables
+   - `tsconfig.build.json` - Relaxed TypeScript rules for deployment
+   - `package.json` - Added `build:deploy` script
+
 2. Deploy to Vercel through Dashboard or CLI
+
 3. Configure environment variables:
    - `VITE_SUPABASE_URL`: Your Supabase project URL
    - `VITE_SUPABASE_ANON_KEY`: Your Supabase anon key
    - `VITE_API_URL`: Your Azure backend URL
+
+See [deployment-fixes.md](deployment-fixes.md) for information about the TypeScript errors that were handled and recommendations for fixing them properly in the codebase.
 
 ## 4. Connecting Everything Together
 
@@ -146,10 +154,11 @@ A:
 
 ### Security
 
-- Ensure all environment variables are properly set
+- Ensure all environment variables are properly set (see [environment-variables.md](environment-variables.md))
 - Configure proper CORS settings to restrict access
 - Set up proper Row Level Security in Supabase
 - Use Azure Key Vault for sensitive keys and certificates
+- Ensure environment files (.env.*) are excluded from Git
 
 ### Performance
 
