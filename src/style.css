@@ -1,0 +1,192 @@
+/* Base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+@layer components {
+  /* Form elements */
+  .form-input {
+    @apply w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 transition-colors;
+  }
+  
+  .form-select {
+    @apply w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300 transition-colors appearance-none bg-no-repeat bg-right;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-text mb-1;
+  }
+  
+  .form-checkbox {
+    @apply h-4 w-4 text-primary border-gray-300 rounded focus:ring-primary-300;
+  }
+  
+  .form-group {
+    @apply mb-3;
+  }
+  
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-600 focus:ring-primary-300;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-text hover:bg-gray-300 focus:ring-gray-300;
+  }
+  
+  .btn-accent {
+    @apply bg-accent text-white hover:bg-accent-600 focus:ring-accent-300;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent hover:bg-gray-100 text-text border-gray-200;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1 text-xs;
+  }
+  
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  
+  .btn-icon {
+    @apply p-1 rounded-full inline-flex items-center justify-center;
+  }
+  
+  /* Cards */
+  .card {
+    @apply bg-surface border border-border rounded-md overflow-hidden transition-shadow;
+  }
+  
+  .card-header {
+    @apply px-4 py-3 border-b border-border;
+  }
+  
+  .card-body {
+    @apply p-4;
+  }
+  
+  .card-footer {
+    @apply px-4 py-3 border-t border-border;
+  }
+  
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+  
+  .badge-easy {
+    @apply bg-difficulty-easy/20 text-difficulty-easy;
+  }
+  
+  .badge-moderate {
+    @apply bg-difficulty-moderate/20 text-difficulty-moderate;
+  }
+  
+  .badge-difficult {
+    @apply bg-difficulty-difficult/20 text-difficulty-difficult;
+  }
+  
+  .badge-extreme {
+    @apply bg-difficulty-extreme/20 text-difficulty-extreme;
+  }
+  
+  /* Dividers */
+  .divider-vertical {
+    @apply w-px h-full bg-border;
+  }
+  
+  .divider-horizontal {
+    @apply h-px w-full bg-border;
+  }
+  
+  /* Trail stats */
+  .trail-stat {
+    @apply flex items-center;
+  }
+  
+  .stat-box {
+    @apply bg-gray-50 rounded-md;
+  }
+  
+  .stat-label {
+    @apply text-text-muted;
+  }
+  
+  .stat-value {
+    @apply text-text;
+  }
+  
+  /* Loading indicators */
+  .loading-spinner {
+    @apply animate-spin h-5 w-5 text-primary;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+  }
+  
+  .load-more-indicator {
+    @apply flex items-center justify-center text-xs text-text-muted;
+  }
+  
+  .end-of-results {
+    @apply text-center text-xs text-text-muted py-2;
+  }
+  
+  /* Map controls */
+  .map-control {
+    @apply bg-surface rounded-md shadow-md overflow-hidden transition-all duration-300 ease-in-out;
+  }
+  
+  .map-control-header {
+    @apply flex justify-between items-center px-4 py-2 cursor-pointer hover:bg-gray-50;
+  }
+  
+  .map-control-body {
+    @apply p-4 space-y-4;
+  }
+  
+  /* Utility classes */
+  .bg-wash-slate {
+    @apply bg-gray-100;
+  }
+  
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Transitions */
+  .fade-enter-active,
+  .fade-leave-active {
+    @apply transition-opacity duration-300;
+  }
+  
+  .fade-enter-from,
+  .fade-leave-to {
+    @apply opacity-0;
+  }
+  
+  .slide-enter-active,
+  .slide-leave-active {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .slide-enter-from,
+  .slide-leave-to {
+    @apply transform -translate-x-full;
+  }
+  
+  .slide-enter-to,
+  .slide-leave-from {
+    @apply transform translate-x-0;
+  }
+}

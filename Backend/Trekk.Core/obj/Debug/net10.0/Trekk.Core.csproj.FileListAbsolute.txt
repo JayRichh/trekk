@@ -1,0 +1,11 @@
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\bin\Debug\net10.0\Trekk.Core.deps.json
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\bin\Debug\net10.0\Trekk.Core.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\bin\Debug\net10.0\Trekk.Core.pdb
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.AssemblyInfoInputs.cache
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.AssemblyInfo.cs
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.csproj.CoreCompileInputs.cache
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\refint\Trekk.Core.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.pdb
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\ref\Trekk.Core.dll

@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "dgSpecHash": "VNZRz2KysgI=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\jsric\\Code\\trekk\\Backend\\Trekk.Infrastructure\\Trekk.Infrastructure.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jsric\\.nuget\\packages\\microsoft.extensions.configuration.abstractions\\10.0.0-preview.2.25163.2\\microsoft.extensions.configuration.abstractions.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "C:\\Users\\jsric\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.0-preview.2.25163.2\\microsoft.extensions.primitives.10.0.0-preview.2.25163.2.nupkg.sha512",
+    "C:\\Users\\jsric\\.nuget\\packages\\system.net.http.json\\8.0.0\\system.net.http.json.8.0.0.nupkg.sha512"
+  ],
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "PackageReference System.Net.Http.Json will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary."
+    },
+    {
+      "code": "NU1603",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Trekk.Infrastructure depends on Microsoft.Extensions.Configuration.Abstractions (>= 10.0.0-preview.2.24128.5) but Microsoft.Extensions.Configuration.Abstractions 10.0.0-preview.2.24128.5 was not found. Microsoft.Extensions.Configuration.Abstractions 10.0.0-preview.2.25163.2 was resolved instead.",
+      "libraryId": "Microsoft.Extensions.Configuration.Abstractions",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
+}

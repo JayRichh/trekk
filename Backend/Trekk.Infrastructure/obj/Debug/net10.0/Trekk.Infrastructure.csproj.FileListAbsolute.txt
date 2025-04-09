@@ -1,0 +1,15 @@
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\bin\Debug\net10.0\Trekk.Infrastructure.deps.json
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\bin\Debug\net10.0\Trekk.Infrastructure.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\bin\Debug\net10.0\Trekk.Infrastructure.pdb
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\bin\Debug\net10.0\Trekk.Core.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\bin\Debug\net10.0\Trekk.Core.pdb
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.AssemblyInfo.cs
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.In.5EE63100.Up2Date
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\refint\Trekk.Infrastructure.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.pdb
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\ref\Trekk.Infrastructure.dll

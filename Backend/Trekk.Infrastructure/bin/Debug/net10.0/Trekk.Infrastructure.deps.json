@@ -1,0 +1,82 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Trekk.Infrastructure/1.0.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.0-preview.2.25163.2",
+          "System.Net.Http.Json": "8.0.0",
+          "Trekk.Core": "1.0.0"
+        },
+        "runtime": {
+          "Trekk.Infrastructure.dll": {}
+        }
+      },
+      "Microsoft.Extensions.Configuration.Abstractions/10.0.0-preview.2.25163.2": {
+        "dependencies": {
+          "Microsoft.Extensions.Primitives": "10.0.0-preview.2.25163.2"
+        },
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.16302"
+          }
+        }
+      },
+      "Microsoft.Extensions.Primitives/10.0.0-preview.2.25163.2": {
+        "runtime": {
+          "lib/net10.0/Microsoft.Extensions.Primitives.dll": {
+            "assemblyVersion": "10.0.0.0",
+            "fileVersion": "10.0.25.16302"
+          }
+        }
+      },
+      "System.Net.Http.Json/8.0.0": {},
+      "Trekk.Core/1.0.0": {
+        "runtime": {
+          "Trekk.Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Trekk.Infrastructure/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Microsoft.Extensions.Configuration.Abstractions/10.0.0-preview.2.25163.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-OkGafDrJfsDQpANeL1LX1g8oWdcKO+eAjPguFW/XmoeLqhe3O5b45IbW/U9AQrUDtEv3Qz7fTeWl7S5Fmhwmpw==",
+      "path": "microsoft.extensions.configuration.abstractions/10.0.0-preview.2.25163.2",
+      "hashPath": "microsoft.extensions.configuration.abstractions.10.0.0-preview.2.25163.2.nupkg.sha512"
+    },
+    "Microsoft.Extensions.Primitives/10.0.0-preview.2.25163.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-x+QrguTaz5tyltxgKFUdACwodInudwiBw1nz6Wh3LOxXBdYzQ4UIbs6A674QaL8swaOK1ZqFkhSQ/l5x8nXrtw==",
+      "path": "microsoft.extensions.primitives/10.0.0-preview.2.25163.2",
+      "hashPath": "microsoft.extensions.primitives.10.0.0-preview.2.25163.2.nupkg.sha512"
+    },
+    "System.Net.Http.Json/8.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-48Bxrd6zcGeQzS4GMEDVjuqCcAw/9wcEWnIu48FQJ5IzfKPiMR1nGtz9LrvGzU4+3TLbx/9FDlGmCUeLin1Eqg==",
+      "path": "system.net.http.json/8.0.0",
+      "hashPath": "system.net.http.json.8.0.0.nupkg.sha512"
+    },
+    "Trekk.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

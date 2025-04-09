@@ -1,0 +1,146 @@
+name: Trekk CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build_and_test_backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore Backend/Trekk.Api/Trekk.Api.csproj
+    
+    - name: Build
+      run: dotnet build Backend/Trekk.Api/Trekk.Api.csproj --no-restore
+    
+    - name: Test
+      run: dotnet test Backend/Trekk.Api/Trekk.Api.csproj --no-build --verbosity normal
+      
+    - name: Publish .NET App
+      if: github.event_name != 'pull_request'
+      run: dotnet publish Backend/Trekk.Api/Trekk.Api.csproj -c Release -o ./publish
+      
+    - name: Upload .NET App artifact
+      if: github.event_name != 'pull_request'
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-build
+        path: ./publish
+        retention-days: 1
+
+  deploy_backend:
+    runs-on: ubuntu-latest
+    needs: build_and_test_backend
+    if: github.event_name != 'pull_request'
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-azure.outputs.webapp-url }}
+    
+    steps:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: api-build
+        path: ./publish
+    
+    - name: Deploy to Azure Web App
+      id: deploy-to-azure
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'trekk-api'  # Replace with your Azure App name
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ./publish
+    
+    - name: Set Web App CORS Settings
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az webapp cors add --resource-group trekk-resources --name trekk-api --allowed-origins 'https://trekk.vercel.app'
+          # Replace 'https://trekk.vercel.app' with your Vercel app URL
+
+  deploy_frontend:
+    runs-on: ubuntu-latest
+    needs: deploy_backend
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install Dependencies
+      run: npm ci
+      
+    - name: Build Frontend
+      run: npm run build
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        VITE_API_URL: ${{ secrets.AZURE_API_URL }}
+        VITE_DOC_API_KEY: ${{ secrets.DOC_API_KEY }}
+    
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        vercel-args: '--prod'
+
+  run_migrations:
+    runs-on: ubuntu-latest
+    needs: [deploy_backend, deploy_frontend]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install Supabase CLI
+      run: npm install -g supabase
+    
+    - name: Run Migrations
+      run: |
+        supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        supabase db push
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  e2e_tests:
+    runs-on: ubuntu-latest
+    needs: [deploy_backend, deploy_frontend, run_migrations]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install Playwright
+      run: |
+        npm ci
+        npx playwright install --with-deps
+    
+    - name: Run E2E Tests
+      run: npx playwright test
+      env:
+        BASE_URL: https://trekk.vercel.app # Replace with your Vercel app URL
