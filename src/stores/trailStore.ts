@@ -23,8 +23,9 @@ export const useTrailStore = defineStore('trail', () => {
   const filteredTrails = computed(() => {
     return trails.value.filter(trail => {
       // Search filter
-      if (searchQuery.value && !trail.name.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
-          !trail.description.toLowerCase().includes(searchQuery.value.toLowerCase())) {
+      if (searchQuery.value && 
+          !trail.name.toLowerCase().includes(searchQuery.value.toLowerCase()) &&
+          !(trail.description?.toLowerCase().includes(searchQuery.value.toLowerCase()) ?? false)) {
         return false;
       }
       
@@ -41,7 +42,7 @@ export const useTrailStore = defineStore('trail', () => {
       }
       
       // Elevation filter
-      if (filters.value.elevation) {
+      if (filters.value.elevation && trail.elevationGain !== undefined) {
         if (filters.value.elevation === 'low' && trail.elevationGain >= 500) return false;
         if (filters.value.elevation === 'medium' && (trail.elevationGain < 500 || trail.elevationGain > 1000)) return false;
         if (filters.value.elevation === 'high' && trail.elevationGain <= 1000) return false;
@@ -57,7 +58,8 @@ export const useTrailStore = defineStore('trail', () => {
     error.value = null;
     
     try {
-      trails.value = await apiService.getTrails();
+      const result = await apiService.getTrails();
+      trails.value = result.trails;
     } catch (err) {
       console.error('Error fetching trails:', err);
       error.value = err instanceof Error ? err.message : 'Failed to fetch trails';
