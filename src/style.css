@@ -125,7 +125,7 @@
   .stat-value {
     @apply text-text;
   }
-  
+
   /* Loading indicators */
   .loading-spinner {
     @apply animate-spin h-5 w-5 text-primary;

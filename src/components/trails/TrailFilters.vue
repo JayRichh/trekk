@@ -15,7 +15,11 @@
         <span v-if="activeFiltersCount > 0" class="bg-accent text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center mr-2">
           {{ activeFiltersCount }}
         </span>
-        <span class="text-xs text-gray-500 mr-2">{{ filteredTrailsCount }} trails</span>
+        <span class="text-xs text-gray-500 mr-2">
+          {{ filteredTrailsCount }} 
+          <template v-if="showingFilteredResults">of {{ displayTotalCount }}</template>
+          trails
+        </span>
         <svg 
           xmlns="http://www.w3.org/2000/svg" 
           width="16" 
@@ -285,7 +289,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
-import type { Trail, Region } from '@/types/trail';
+import type { Trail, Region, TrailStatistics } from '@/types/trail';
+import { useTrailData } from '@/composables/useTrailData';
 
 const props = defineProps<{
   trails: Trail[];
@@ -293,7 +298,21 @@ const props = defineProps<{
   filteredTrailsCount: number;
   viewMode: 'grid' | 'list' | 'map';
   groupBy: 'none' | 'region' | 'difficulty';
+  totalTrailsCount?: number;
 }>();
+
+// Get trail statistics for accurate counts
+const { fetchStatistics } = useTrailData();
+const trailStats = ref<TrailStatistics | null>(null);
+
+// Fetch statistics on component mount
+onMounted(async () => {
+  try {
+    trailStats.value = await fetchStatistics();
+  } catch (error) {
+    console.error("Error fetching trail statistics:", error);
+  }
+});
 
 const emit = defineEmits<{
   (e: 'update:filters', filters: { difficulty: string, length: string, elevation: string, region: string }): void;
@@ -360,6 +379,25 @@ const activeFiltersCount = computed(() => {
   if (filters.value.elevation) count++;
   if (filters.value.region) count++;
   return count;
+});
+
+// Computed property to determine if we're showing filtered results
+const showingFilteredResults = computed(() => {
+  return activeFiltersCount.value > 0 || searchQuery.value.trim() !== '';
+});
+
+// Total count to display (from prop or statistics)
+const displayTotalCount = computed(() => {
+  // Use the prop first if available
+  if (props.totalTrailsCount !== undefined) {
+    return props.totalTrailsCount;
+  }
+  // Otherwise use the statistics count if available
+  if (trailStats.value?.totalCount) {
+    return trailStats.value.totalCount;
+  }
+  // Otherwise fallback to the filtered count
+  return props.filteredTrailsCount;
 });
 
 // Format length filter for display
@@ -484,27 +522,43 @@ const validateNumberInput = (e: KeyboardEvent) => {
   }
 };
 
-// Create region options with counts
+// Create region options with counts using statistics
 const regionsWithCounts = computed(() => {
-  // Count trails per region
-  const counts: Record<string, number> = {};
-  
-  props.trails.forEach(trail => {
-    if (trail.region && trail.region.length > 0) {
-      trail.region.forEach(regionName => {
-        const region = props.regions.find(r => r.name === regionName);
-        if (region) {
-          counts[region.id] = (counts[region.id] || 0) + 1;
-        }
-      });
-    }
-  });
-  
-  // Add counts to regions
-  return props.regions.map(region => ({
-    ...region,
-    trailCount: counts[region.id] || 0
-  }));
+  // If we have statistics, use those counts for more accuracy
+  if (trailStats.value) {
+    const countsByRegionId: Record<string, number> = {};
+    
+    // Convert statistics to a lookup map by region ID
+    trailStats.value.byRegion.forEach(regionStat => {
+      countsByRegionId[regionStat.id] = regionStat.count;
+    });
+    
+    // Apply stats to region objects
+    return props.regions.map(region => ({
+      ...region,
+      trailCount: countsByRegionId[region.id] || 0
+    }));
+  } else {
+    // Fallback to calculating from loaded trails if stats aren't available
+    const counts: Record<string, number> = {};
+    
+    props.trails.forEach(trail => {
+      if (trail.region && trail.region.length > 0) {
+        trail.region.forEach(regionName => {
+          const region = props.regions.find(r => r.name === regionName);
+          if (region) {
+            counts[region.id] = (counts[region.id] || 0) + 1;
+          }
+        });
+      }
+    });
+    
+    // Add counts to regions
+    return props.regions.map(region => ({
+      ...region,
+      trailCount: counts[region.id] || 0
+    }));
+  }
 });
 
 // Watch for changes to maxResults dropdown

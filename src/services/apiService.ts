@@ -5,7 +5,9 @@ import type {
   TrailFilters, 
   Region, 
   CoordinateSystem,
-  CacheEntry
+  CacheEntry,
+  TrailStatistics,
+  LengthRange
 } from '../types/trail';
 import { supabase } from '../lib/supabase';
 import { mockTrails, mockRegions } from './mockData';
@@ -333,18 +335,253 @@ async function attachRatingsToTrails(trails: Trail[], trailIds: string[]): Promi
   }
 }
 
+// Process data in smaller chunks to avoid blocking the main thread
+async function processDataInChunks<T, U>(
+  items: T[],
+  processFn: (item: T) => U,
+  chunkSize: number = 50
+): Promise<U[]> {
+  const results: U[] = [];
+  const totalItems = items.length;
+  
+  for (let i = 0; i < totalItems; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    // Use setTimeout to allow the UI thread to breathe between chunks
+    await new Promise(resolve => {
+      setTimeout(() => {
+        const processedChunk = chunk.map(processFn);
+        results.push(...processedChunk);
+        resolve(null);
+      }, 0);
+    });
+  }
+  
+  return results;
+}
+
+// Standard length ranges used for filtering and statistics
+const LENGTH_RANGES: LengthRange[] = [
+  { id: '0-5', label: 'Short (< 5km)', min: 0, max: 5 },
+  { id: '5-15', label: 'Medium (5-15km)', min: 5, max: 15 },
+  { id: '15-30', label: 'Long (15-30km)', min: 15, max: 30 },
+  { id: '30-100', label: 'Very Long (> 30km)', min: 30, max: null }
+];
+
+// Difficulty levels with their display labels
+const DIFFICULTY_LEVELS = [
+  { id: 'easy', label: 'Easy' },
+  { id: 'moderate', label: 'Moderate' },
+  { id: 'difficult', label: 'Difficult' },
+  { id: 'extreme', label: 'Extreme' }
+];
+
 export const apiService = {
-  // Get all trails with optional filtering
-  async getTrails(filters?: TrailFilters): Promise<Trail[]> {
+  // Get trail statistics (counts by category)
+  async getTrailStatistics(): Promise<TrailStatistics> {
     try {
-      let trails: Trail[] = [];
+      let docTrails: DOCTrail[] = [];
+      let allTrails: Trail[] = [];
+      
+      // Try to get from cache first to avoid re-fetching
+      const cachedTrails = getCachedData<DOCTrail[]>(CACHE_KEYS.TRAILS);
+      
+      if (cachedTrails) {
+        console.log('Using cached trails data for statistics');
+        docTrails = cachedTrails;
+      } else {
+        // Fetch from API if not in cache
+        console.log('Fetching trails from DOC API for statistics');
+        if (API_KEY) {
+          docTrails = await fetchFromDOC<DOCTrail[]>('tracks');
+          // Cache the results
+          setCachedData(CACHE_KEYS.TRAILS, docTrails);
+        } else {
+          // Use mock data if no API key
+          return this.getMockStatistics();
+        }
+      }
+      
+      // We need all trails for statistics, but we can process them in chunks
+      allTrails = await processDataInChunks(docTrails, docTrailToTrail, 100);
+      
+      // Calculate statistics
+      const stats: TrailStatistics = {
+        totalCount: allTrails.length,
+        byRegion: [],
+        byDifficulty: [],
+        byLength: [],
+        totalDistance: 0
+      };
+      
+      // Calculate total distance of all trails
+      stats.totalDistance = allTrails.reduce((total, trail) => total + trail.length, 0);
+      
+      // Count by region
+      const regionCounts: Record<string, { id: string, name: string, count: number }> = {};
+      
+      // Get regions data
+      const regions = await this.getRegions();
+      const regionMap = new Map<string, Region>();
+      regions.forEach(region => regionMap.set(region.name, region));
+      
+      // Count trails by region
+      allTrails.forEach(trail => {
+        if (trail.region && trail.region.length > 0) {
+          trail.region.forEach(regionName => {
+            const region = regionMap.get(regionName);
+            if (region && region.id) {
+              if (!regionCounts[region.id]) {
+                regionCounts[region.id] = { id: region.id, name: region.name, count: 0 };
+              }
+              
+              // Ensure it exists before incrementing
+              if (regionCounts[region.id]) {
+                regionCounts[region.id].count++;
+              }
+            }
+          });
+        }
+      });
+      
+      stats.byRegion = Object.values(regionCounts).sort((a, b) => b.count - a.count);
+      
+      // Count by difficulty
+      const difficultyCounts: Record<string, number> = {
+        'easy': 0,
+        'moderate': 0,
+        'difficult': 0,
+        'extreme': 0
+      };
+      
+      allTrails.forEach(trail => {
+        if (difficultyCounts[trail.difficulty] !== undefined) {
+          difficultyCounts[trail.difficulty]++;
+        } else {
+          // Default to moderate for unknown difficulties
+          difficultyCounts['moderate']++;
+        }
+      });
+      
+      stats.byDifficulty = DIFFICULTY_LEVELS.map(level => ({
+        difficulty: level.id,
+        count: difficultyCounts[level.id] || 0
+      }));
+      
+      // Count by length range
+      const lengthCounts = LENGTH_RANGES.map(range => {
+        const count = allTrails.filter(trail => {
+          if (range.max === null) {
+            return trail.length >= range.min;
+          }
+          return trail.length >= range.min && trail.length < range.max;
+        }).length;
+        
+        return {
+          range: range.id,
+          label: range.label,
+          count,
+          min: range.min,
+          max: range.max
+        };
+      });
+      
+      stats.byLength = lengthCounts;
+      
+      return stats;
+    } catch (error) {
+      console.error('Error generating trail statistics:', error);
+      return this.getMockStatistics();
+    }
+  },
+  
+  // Fallback mock statistics if API fails
+  getMockStatistics(): TrailStatistics {
+    const stats: TrailStatistics = {
+      totalCount: mockTrails.length,
+      byRegion: [],
+      byDifficulty: [],
+      byLength: [],
+      totalDistance: 0
+    };
+    
+    // Calculate total distance
+    stats.totalDistance = mockTrails.reduce((total, trail) => total + trail.length, 0);
+    
+    // Count by region
+    const regionCounts: Record<string, { id: string, name: string, count: number }> = {};
+    mockRegions.forEach(region => {
+      regionCounts[region.id] = { id: region.id, name: region.name, count: 0 };
+    });
+    
+    mockTrails.forEach(trail => {
+      if (trail.region && trail.region.length > 0) {
+        trail.region.forEach(regionName => {
+          const region = mockRegions.find(r => r.name === regionName);
+          if (region && region.id && regionCounts[region.id]) {
+            regionCounts[region.id].count++;
+          }
+        });
+      }
+    });
+    
+    stats.byRegion = Object.values(regionCounts);
+    
+    // Count by difficulty
+    const difficultyCounts: Record<string, number> = {
+      'easy': 0,
+      'moderate': 0,
+      'difficult': 0,
+      'extreme': 0
+    };
+    
+    mockTrails.forEach(trail => {
+      if (difficultyCounts[trail.difficulty] !== undefined) {
+        difficultyCounts[trail.difficulty]++;
+      } else {
+        difficultyCounts['moderate']++;
+      }
+    });
+    
+    stats.byDifficulty = DIFFICULTY_LEVELS.map(level => ({
+      difficulty: level.id,
+      count: difficultyCounts[level.id] || 0
+    }));
+    
+    // Count by length
+    stats.byLength = LENGTH_RANGES.map(range => {
+      const count = mockTrails.filter(trail => {
+        if (range.max === null) {
+          return trail.length >= range.min;
+        }
+        return trail.length >= range.min && trail.length < range.max;
+      }).length;
+      
+      return {
+        range: range.id,
+        label: range.label,
+        count,
+        min: range.min,
+        max: range.max
+      };
+    });
+    
+    return stats;
+  },
+  
+  // Get all trails with optional filtering and pagination
+  async getTrails(filters?: TrailFilters, options?: { page?: number, pageSize?: number, loadAll?: boolean }): Promise<{ trails: Trail[], totalCount: number }> {
+    try {
+      const defaultOptions = { page: 1, pageSize: 20, loadAll: false };
+      const { page, pageSize, loadAll } = { ...defaultOptions, ...options };
+      
+      let allTrails: Trail[] = [];
+      let docTrails: DOCTrail[] = [];
       
       // Check if we have API key
       if (API_KEY) {
         try {
           // Try to get from cache first
           const cachedTrails = getCachedData<DOCTrail[]>(CACHE_KEYS.TRAILS);
-          let docTrails: DOCTrail[];
           
           if (cachedTrails) {
             console.log('Using cached trails data');
@@ -357,32 +594,71 @@ export const apiService = {
             setCachedData(CACHE_KEYS.TRAILS, docTrails);
           }
           
-          // Convert to our Trail format
-          trails = docTrails.map(docTrailToTrail);
+          // Apply filters early if possible to reduce processing
+          if (filters && filters.region) {
+            docTrails = docTrails.filter(trail => 
+              trail.region && trail.region.some(r => 
+                r.toLowerCase().includes(filters.region!.toLowerCase())
+              )
+            );
+          }
+          
+          // For map views, we need to process all data upfront
+          if (loadAll) {
+            allTrails = await processDataInChunks(docTrails, docTrailToTrail, 100);
+          } else {
+            // For regular views, we process just what we need for initial display
+            const initialProcessSize = Math.min(pageSize * 2, docTrails.length);
+            const initialBatch = docTrails.slice(0, initialProcessSize);
+            
+            // Convert to our Trail format - but only process what we need immediately
+            allTrails = await processDataInChunks(initialBatch, docTrailToTrail);
+            
+            // Store the remaining unprocessed trails for later
+            if (docTrails.length > initialProcessSize) {
+              // We don't process these now, but we'll make them available for future processing
+              const remainingTrails = docTrails.slice(initialProcessSize);
+              console.log(`${remainingTrails.length} trails ready for on-demand processing`);
+            }
+          }
         } catch (error) {
           console.warn('API request failed, using mock data:', error);
-          trails = mockTrails;
+          allTrails = mockTrails;
         }
       } else {
         console.warn('API_KEY not found, using mock data');
-        trails = mockTrails;
+        allTrails = mockTrails;
       }
       
-      // Apply filters if provided
+      // Apply remaining filters
+      let filteredTrails = allTrails;
       if (filters) {
-        trails = filterTrails(trails, filters);
+        filteredTrails = filterTrails(allTrails, filters);
       }
       
-      // Get ratings for each trail from Supabase if we have trails
-      if (trails.length > 0) {
-        const trailIds = trails.map(trail => trail.id);
-        await attachRatingsToTrails(trails, trailIds);
+      // Calculate total count (used for pagination UI)
+      const totalCount = filteredTrails.length;
+      
+      // Get the requested page
+      let pageTrails = filteredTrails;
+      if (!loadAll) {
+        const startIdx = (page - 1) * pageSize;
+        pageTrails = filteredTrails.slice(startIdx, startIdx + pageSize);
       }
       
-      return trails;
+      // Get ratings for trails on this page
+      if (pageTrails.length > 0) {
+        const trailIds = pageTrails.map(trail => trail.id);
+        await attachRatingsToTrails(pageTrails, trailIds);
+      }
+      
+      return { 
+        trails: pageTrails, 
+        totalCount 
+      };
     } catch (error) {
       console.error('Error fetching trails:', error);
-      return [];
+      return { trails: [], totalCount: 0 };
     }
   },
   

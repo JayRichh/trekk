@@ -187,50 +187,14 @@
         <div>
           <div class="bg-white rounded-lg p-6 shadow-md mb-6">
             <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Reviews</h2>
-            <div v-if="trail.reviews && trail.reviews.length > 0" class="flex flex-col gap-4 mb-4">
-              <div v-for="(review, index) in trail.reviews" :key="index" class="p-4 bg-gray-100 rounded-md">
-                <div class="flex justify-between items-center mb-1">
-                  <div class="font-semibold text-sm text-primary">{{ review.author }}</div>
-                  <div class="flex">
-                    <span v-for="i in 5" :key="i" class="text-base" :class="{ 'text-yellow-400': i <= review.rating, 'text-gray-300': i > review.rating }">★</span>
-                  </div>
-                </div>
-                <div class="text-xs text-gray-500 mb-2">{{ review.date }}</div>
-                <p class="text-sm text-gray-700">{{ review.text }}</p>
-                
-                <!-- Tips section if available -->
-                <div v-if="review.tips" class="mt-2 pt-2 border-t border-gray-200">
-                  <div class="font-semibold text-xs text-gray-600 mb-1">Hiker Tips:</div>
-                  <p class="text-xs text-gray-600">{{ review.tips }}</p>
-                </div>
-                
-                <!-- Photos if available -->
-                <div v-if="review.photos && review.photos.length > 0" class="mt-2 pt-2">
-                  <div class="flex flex-wrap gap-2">
-                    <img 
-                      v-for="(photo, photoIndex) in review.photos" 
-                      :key="photoIndex" 
-                      :src="photo" 
-                      :alt="`Photo by ${review.author}`"
-                      class="w-16 h-16 object-cover rounded"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div v-else class="text-center py-4 text-gray-500 text-sm">
-              <p>No reviews yet for this trail.</p>
-            </div>
             
-            <button v-if="isLoggedIn" @click="openReviewForm" class="w-full flex items-center justify-center py-2 bg-blue-500 text-white rounded-md text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
-                <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5l0 14M5 12l14 0"/>
-              </svg>
-              Add Your Review
-            </button>
-            <div v-else class="text-center mt-4">
-              <router-link to="/login" class="text-blue-500 text-sm">Login to add a review</router-link>
-            </div>
+            <RatingList 
+              :trail-id="trail.id" 
+              :show-filters="true"
+              :show-pagination="false"
+              :items-per-page="5"
+              @ratings-updated="onRatingsUpdated"
+            />
           </div>
         </div>
       </div>
@@ -298,6 +262,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import LoadingSpinner from '../components/shared/LoadingSpinner.vue';
+import RatingList from '../components/ratings/RatingList.vue';
 import { useRoute, useRouter } from 'vue-router';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -538,6 +503,19 @@ const backToMap = () => {
   }
 };
 
+// Handle ratings updates
+const onRatingsUpdated = async () => {
+  if (!trail.value) return;
+  
+  try {
+    // Refresh trail data to show updated ratings
+    const trailData = await apiService.getTrailById(trail.value.id);
+    trail.value = trailData;
+  } catch (error) {
+    console.error('Failed to refresh trail data:', error);
+  }
+};
+
 // Submit review
 const submitReview = async () => {
   if (!trail.value || reviewForm.value.rating === 0) return;
@@ -555,8 +533,7 @@ const submitReview = async () => {
     
     if (success) {
       // Refresh trail data to show new review
-      const trailData = await apiService.getTrailById(trail.value.id);
-      trail.value = trailData;
+      await onRatingsUpdated();
       showReviewModal.value = false;
     }
   } catch (error) {

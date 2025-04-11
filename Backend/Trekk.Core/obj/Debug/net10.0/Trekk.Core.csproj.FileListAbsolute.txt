@@ -9,3 +9,4 @@ C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.dll
 C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\refint\Trekk.Core.dll
 C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.pdb
 C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\ref\Trekk.Core.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Core\obj\Debug\net10.0\Trekk.Core.sourcelink.json

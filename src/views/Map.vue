@@ -158,8 +158,12 @@ async function loadInitialData() {
     const regionsData = await fetchRegions();
     regions.value = regionsData;
     
-    // Fetch all trails for the map without limiting
-    await fetchTrails(); // No maxTrails filter to load all available trails
+    // Fetch all trails for the map with loadAll flag set to true
+    // This ensures we process all trails upfront for the map
+    const mapTrails = await fetchTrails(undefined, { loadAll: true });
+    
+    // Log how many trails were loaded
+    console.log(`Loaded ${mapTrails.length} trails for map view`);
     
     // Fetch map examples (optional)
     await getMapboxExamples('terrain');

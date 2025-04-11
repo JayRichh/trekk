@@ -54,7 +54,14 @@
       
       <p class="text-sm text-text-light line-clamp-3">{{ trail.description }}</p>
       
-      <div class="flex justify-end">
+      <div class="flex justify-between items-center">
+        <RatingButton 
+          v-if="isLoggedIn"
+          :trail-id="trail.id"
+          buttonText="Rate"
+          icon-only
+          button-class="text-yellow-500 hover:text-yellow-600 flex items-center"
+        />
         <router-link 
           :to="`/trails/${trail.id}`"
           class="btn btn-sm btn-accent"
@@ -69,6 +76,8 @@
 <script setup lang="ts">
 import { defineProps, defineEmits } from 'vue';
 import type { Trail } from '@/types/trail';
+import { useAuth } from '@/composables/useAuth';
+import RatingButton from '@/components/ratings/RatingButton.vue';
 
 const props = defineProps<{
   trail: Trail | null;
@@ -78,4 +87,6 @@ const props = defineProps<{
 defineEmits<{
   (e: 'close'): void;
 }>();
+
+const { isLoggedIn } = useAuth();
 </script>

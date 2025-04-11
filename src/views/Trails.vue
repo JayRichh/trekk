@@ -1,7 +1,6 @@
 <template>
   <div class="py-8">
     <div class="container mx-auto px-4">
-      <!-- Hero Header with Background -->
       <div class="relative mb-8 rounded-xl overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary-dark/80 z-10"></div>
         <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1551632811-561732d1e306'); filter: brightness(0.7);"></div>
@@ -9,14 +8,13 @@
           <h1 class="text-4xl font-bold mb-2">Discover Trails</h1>
           <p class="text-lg max-w-2xl opacity-90">Find your next adventure from our collection of hiking trails</p>
           
-          <!-- Stats Bar -->
           <div class="flex flex-wrap gap-6 mt-6">
             <div class="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="mr-2 text-white">
                 <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19h18M5 17h.01M7 10h.01M11 13h.01M13 7h.01M17 13h.01M19 7l-4 6 -4 -3 -4 6"/>
               </svg>
               <div>
-                <div class="text-2xl font-semibold">{{ trails.length }}</div>
+                <div class="text-2xl font-semibold">{{ trailsCount }}</div>
                 <div class="text-xs opacity-80">Total Trails</div>
               </div>
             </div>
@@ -36,7 +34,7 @@
                 <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 12L12 7M12 12L16 14"/>
               </svg>
               <div>
-                <div class="text-2xl font-semibold">{{ totalDistance.toFixed(0) }}</div>
+                <div class="text-2xl font-semibold">{{ totalDistanceKm }}</div>
                 <div class="text-xs opacity-80">Total km</div>
               </div>
             </div>
@@ -44,14 +42,13 @@
         </div>
       </div>
 
-      <!-- Main Content Area with Filters and Trails -->
       <div class="flex flex-col lg:flex-row gap-6">
-        <!-- Filters Column -->
         <div class="lg:w-1/3 xl:w-1/4">
           <TrailFilters
             :trails="trails"
             :regions="regions"
             :filtered-trails-count="filteredTrails.length"
+            :total-trails-count="trailsCount"
             :view-mode="viewMode"
             :group-by="groupBy"
             @update:filters="updateFilters"
@@ -63,14 +60,11 @@
           />
         </div>
         
-        <!-- Trails Display Column -->
         <div class="lg:w-2/3 xl:w-3/4">
-          <!-- Loading State -->
           <div v-if="loading" class="flex flex-col items-center justify-center py-8 text-text-muted">
             <LoadingSpinner :loading="loading" :show-progress="true" class="mb-4" />
           </div>
           
-          <!-- Empty State -->
           <div v-else-if="filteredTrails.length === 0" class="text-center py-8 text-text-muted flex flex-col items-center bg-white rounded-lg shadow-md p-8">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48" class="mb-4 text-text-light opacity-60">
               <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.5 14.5L3 9l2.5-4.5L12 7l1-4.5L19.5 7l2-3.5.5 7-4.5 3M7 13l4.5 4.5L16 17M9 17l1.5 3.5L12 19l1.5 3L15 17"/>
@@ -79,7 +73,6 @@
             <button @click="resetFilters" class="btn btn-accent">Reset Filters</button>
           </div>
           
-          <!-- Map View -->
           <div v-else-if="viewMode === 'map'" class="mb-6">
             <TrailMapView 
               :trails="filteredTrails"
@@ -89,9 +82,7 @@
             />
           </div>
           
-          <!-- Grid View -->
           <div v-else-if="viewMode === 'grid'" ref="trailsContainer">
-            <!-- No Grouping -->
             <div v-if="groupBy === 'none'" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <TrailGridCard 
                 v-for="trail in visibleTrails" 
@@ -104,7 +95,6 @@
               />
             </div>
             
-            <!-- Group by Region -->
             <div v-else-if="groupBy === 'region'" class="space-y-8">
               <div v-for="group in trailsByRegion" :key="group.regionName" class="space-y-4">
                 <div class="sticky top-0 z-10 bg-background py-2">
@@ -115,7 +105,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   <TrailGridCard 
-                    v-for="trail in group.trails.slice(0, visibleItemsCount)" 
+                    v-for="trail in group.trails" 
                     :key="trail.id"
                     :trail="trail"
                     :is-selected="selectedTrailId === trail.id"
@@ -127,7 +117,6 @@
               </div>
             </div>
             
-            <!-- Group by Difficulty -->
             <div v-else-if="groupBy === 'difficulty'" class="space-y-8">
               <div v-for="group in trailsByDifficulty" :key="group.difficulty" class="space-y-4">
                 <div class="sticky top-0 z-10 bg-background py-2">
@@ -149,7 +138,7 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   <TrailGridCard 
-                    v-for="trail in group.trails.slice(0, visibleItemsCount)" 
+                    v-for="trail in group.trails" 
                     :key="trail.id"
                     :trail="trail"
                     :is-selected="selectedTrailId === trail.id"
@@ -162,9 +151,7 @@
             </div>
           </div>
           
-          <!-- List View -->
           <div v-else-if="viewMode === 'list'" ref="trailsContainer">
-            <!-- No Grouping -->
             <div v-if="groupBy === 'none'" class="space-y-3">
               <TrailListCard 
                 v-for="trail in visibleTrails" 
@@ -177,7 +164,6 @@
               />
             </div>
             
-            <!-- Group by Region -->
             <div v-else-if="groupBy === 'region'" class="space-y-8">
               <div v-for="group in trailsByRegion" :key="group.regionName" class="space-y-4">
                 <div class="sticky top-0 z-10 bg-background py-2">
@@ -188,7 +174,7 @@
                 </div>
                 <div class="space-y-3">
                   <TrailListCard 
-                    v-for="trail in group.trails.slice(0, visibleItemsCount)" 
+                    v-for="trail in group.trails" 
                     :key="trail.id"
                     :trail="trail"
                     :is-selected="selectedTrailId === trail.id"
@@ -200,7 +186,6 @@
               </div>
             </div>
             
-            <!-- Group by Difficulty -->
             <div v-else-if="groupBy === 'difficulty'" class="space-y-8">
               <div v-for="group in trailsByDifficulty" :key="group.difficulty" class="space-y-4">
                 <div class="sticky top-0 z-10 bg-background py-2">
@@ -222,7 +207,7 @@
                 </div>
                 <div class="space-y-3">
                   <TrailListCard 
-                    v-for="trail in group.trails.slice(0, visibleItemsCount)" 
+                    v-for="trail in group.trails" 
                     :key="trail.id"
                     :trail="trail"
                     :is-selected="selectedTrailId === trail.id"
@@ -235,10 +220,12 @@
             </div>
           </div>
           
-          <!-- Loading indicator for pagination -->
-          <div v-if="isFetchingMore" class="mt-6 flex justify-center py-4">
-            <div class="flex items-center text-text-muted">
-              <svg class="w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <div 
+            v-if="isFetchingMore" 
+            class="fixed bottom-4 left-0 right-0 mx-auto w-full z-50 px-4"
+          >
+            <div class="max-w-xs mx-auto bg-white shadow-lg rounded-full py-3 px-4 flex items-center justify-center text-text-muted">
+              <svg class="w-5 h-5 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
@@ -246,20 +233,26 @@
             </div>
           </div>
           
-          <!-- Load more button -->
-          <div v-if="visibleTrails.length < filteredTrails.length && !isFetchingMore" class="mt-8 text-center">
-            <button 
-              @click="loadMoreItems()" 
-              class="btn btn-outline mx-auto"
-            >
-              Load More
-            </button>
-          </div>
-          
-          <!-- End of results message -->
-          <div v-if="visibleTrails.length === filteredTrails.length && filteredTrails.length > initialLoadCount" class="mt-6 text-center text-text-muted text-sm py-2">
+          <div v-if="allItemsLoaded && filteredTrails.length > initialLoadCount" class="mt-6 text-center text-text-muted text-sm py-2">
             End of results
           </div>
+          
+          <!-- <div 
+            ref="loadingTrigger" 
+            class="h-20 w-full mt-8 flex items-center justify-center"
+            :class="{'mb-20': currentPage < totalPages || hasMoreItems}"
+          >
+            <button 
+              v-if="hasMoreItems && !isFetchingMore" 
+              @click="loadMoreItems()"
+              class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+            >
+              Load More Trails
+            </button>
+            <div v-else class="text-text-light text-sm">
+              {{ allItemsLoaded ? 'All trails loaded' : 'Scroll to load more trails...' }}
+            </div>
+          </div> -->
         </div>
       </div>
     </div>
@@ -267,9 +260,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, reactive, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import type { Trail, Region } from '@/types/trail';
+import type { Trail, Region, TrailStatistics } from '@/types/trail';
 import LoadingSpinner from '@/components/shared/LoadingSpinner.vue';
 import { useTrailData } from '@/composables/useTrailData';
 import TrailFilters from '@/components/trails/TrailFilters.vue';
@@ -278,207 +271,96 @@ import TrailListCard from '@/components/trails/TrailListCard.vue';
 import TrailMapView from '@/components/trails/TrailMapView.vue';
 
 const router = useRouter();
+
+// State & Filters
 const loading = ref(true);
 const searchQuery = ref('');
-const filters = reactive({
-  difficulty: '',
-  length: '',
-  elevation: '',
-  region: '',
-});
-
-// View state
+const filters = reactive({ difficulty: '', length: '', elevation: '', region: '' });
 const viewMode = ref<'grid' | 'list' | 'map'>('grid');
 const groupBy = ref<'none' | 'region' | 'difficulty'>('none');
 const selectedTrailId = ref<string | null>(null);
 
-// Pagination state
+// Data from useTrailData composable
 const { 
-  fetchTrails, 
-  fetchRegions, 
-  currentPage, 
-  itemsPerPage, 
-  totalPages, 
-  paginatedTrails: composablePaginatedTrails,
-  isFetchingMore,
-  loadPageData
+  fetchTrails, fetchRegions, fetchStatistics,
+  currentPage, itemsPerPage, totalPages, totalTrailCount,
+  paginatedTrails, isFetchingMore, loadPageData
 } = useTrailData();
 
-// Trail data state
+// Local state for trails, regions and pagination
+const statistics = ref<TrailStatistics | null>(null);
 const trails = ref<Trail[]>([]);
 const regions = ref<Region[]>([]);
-const maxVisiblePages = 5; // Maximum number of page buttons to show
-const initialLoadCount = ref(12); // Initial number of items to load
-const incrementalLoadCount = ref(6); // Number of additional items to load on scroll
-const visibleItemsCount = ref(initialLoadCount.value); // Currently visible items
-const trailsContainer = ref<HTMLElement | null>(null);
-const loadThreshold = 300; // Pixels from bottom to trigger loading more
+const initialLoadCount = ref(12);
+const incrementalLoadCount = ref(6);
+const visibleItemsCount = ref(initialLoadCount.value);
+const allItemsLoaded = ref(false);
+const loadThreshold = 300; // in pixels
 
-// Max results configuration
-const maxResults = ref<string | number>("9999");
-const customMaxResults = ref<string | number>("9999");
+// Computed display values
+const trailsCount = computed(() => statistics.value?.totalCount || 0);
+const totalDistanceKm = computed(() =>
+  statistics.value?.totalDistance ? Math.round(statistics.value.totalDistance).toLocaleString() : '0'
+);
 
-// Calculate total distance of all trails
-const totalDistance = computed(() => {
-  return trails.value.reduce((total, trail) => total + trail.length, 0);
-});
-
-// Using window scroll event for more reliable infinite scrolling
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
-});
-
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
-
-// Scroll handler for infinite scrolling
-const handleScroll = () => {
-  if (!trailsContainer.value || isFetchingMore.value) return;
-  
-  const container = trailsContainer.value;
-  const scrollBottom = window.innerHeight + window.scrollY;
-  const containerBottom = container.offsetTop + container.offsetHeight;
-  
-  if (scrollBottom >= containerBottom - loadThreshold && visibleItemsCount.value < filteredTrails.value.length) {
-    loadMoreItems();
-  }
-};
-
-// Load more items function
-const loadMoreItems = async () => {
-  isFetchingMore.value = true;
-  
-  // Simulate network delay for smoother UX
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Calculate how many more items to load
-  const newItemsCount = Math.min(
-    visibleItemsCount.value + incrementalLoadCount.value,
-    filteredTrails.value.length
-  );
-  
-  visibleItemsCount.value = newItemsCount;
-  isFetchingMore.value = false;
-};
-
-// Reset visible items count when filters change
-watch([filters, searchQuery], () => {
-  // When filters change, reset the visible items count
-  visibleItemsCount.value = initialLoadCount.value;
-}, { deep: true });
-
-// Fetch trails and regions from API service with optimistic loading
-onMounted(async () => {
-  loading.value = true;
-  
-  try {
-    // Fetch regions first for the filter dropdown
-    regions.value = await fetchRegions();
-    
-    // Then fetch trails with a limit to improve initial load time
-    const trailsData = await fetchTrails({ maxTrails: Number(maxResults.value) }); 
-    trails.value = trailsData;
-  } catch (error) {
-    console.error('Failed to load trails:', error);
-  } finally {
-    loading.value = false;
-  }
-});
-
-// Reset pagination when filters or search query changes
-watch([filters, searchQuery], () => {
-  currentPage.value = 1;
-}, { deep: true });
-
-// Filtered trails based on search and filters
+// Client-side filtering (applied on already loaded trails)
 const filteredTrails = computed(() => {
   return trails.value.filter(trail => {
-    // Search filter
     if (searchQuery.value) {
-      const nameMatch = trail.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-      const descMatch = trail.description ? trail.description.toLowerCase().includes(searchQuery.value.toLowerCase()) : false;
+      const q = searchQuery.value.toLowerCase();
+      const nameMatch = trail.name.toLowerCase().includes(q);
+      const descMatch = trail.description ? trail.description.toLowerCase().includes(q) : false;
       if (!nameMatch && !descMatch) return false;
     }
-    
-    // Difficulty filter
-    if (filters.difficulty && trail.difficulty !== filters.difficulty) {
-      return false;
-    }
-    
-    // Length filter
+    if (filters.difficulty && trail.difficulty !== filters.difficulty) return false;
     if (filters.length) {
       const parts = filters.length.split('-');
       const min = Number(parts[0] || 0);
       const max = parts.length > 1 ? Number(parts[1]) : Infinity;
-      if (trail.length < min || trail.length > max) {
-        return false;
-      }
+      if (trail.length < min || trail.length > max) return false;
     }
-    
-    // Elevation filter
     if (filters.elevation && trail.elevationGain !== undefined) {
       const parts = filters.elevation.split('-');
       const min = Number(parts[0] || 0);
       const max = parts.length > 1 ? Number(parts[1]) : Infinity;
-      if (trail.elevationGain < min || trail.elevationGain > max) {
-        return false;
-      }
+      if (trail.elevationGain < min || trail.elevationGain > max) return false;
     }
-    
-    // Region filter
     if (filters.region && filters.region.trim() !== '') {
-      // Check if the trail belongs to the selected region
       if (!trail.region || !trail.region.some(r => {
-        const region = regions.value.find(reg => reg.id === filters.region);
-        return region && r === region.name;
-      })) {
-        return false;
-      }
+        const reg = regions.value.find(reg => reg.id === filters.region);
+        return reg && r === reg.name;
+      })) return false;
     }
-    
     return true;
   });
 });
 
-// Dynamic loading - visible trails
+// Only show a slice of filtered trails based on the visibleItemsCount
 const visibleTrails = computed(() => {
   return filteredTrails.value.slice(0, visibleItemsCount.value);
 });
 
-// Organize trails by region for grouped view
+// Group trails for region/difficulty view (unchanged logic)
 const trailsByRegion = computed(() => {
   const grouped: Record<string, { regionName: string, trails: Trail[] }> = {};
-  
-  // First pass: create groups
   filteredTrails.value.forEach(trail => {
     if (trail.region && trail.region.length > 0) {
       trail.region.forEach(regionName => {
         if (!grouped[regionName]) {
-          grouped[regionName] = {
-            regionName,
-            trails: []
-          };
+          grouped[regionName] = { regionName, trails: [] };
         }
         grouped[regionName].trails.push(trail);
       });
     } else {
-      // For trails without region
       if (!grouped['Other']) {
-        grouped['Other'] = {
-          regionName: 'Other',
-          trails: []
-        };
+        grouped['Other'] = { regionName: 'Other', trails: [] };
       }
       grouped['Other'].trails.push(trail);
     }
   });
-  
-  // Convert to array and sort by region name
   return Object.values(grouped).sort((a, b) => a.regionName.localeCompare(b.regionName));
 });
 
-// Organize trails by difficulty for grouped view
 const trailsByDifficulty = computed(() => {
   const grouped: Record<string, { difficulty: string, trails: Trail[] }> = {
     'easy': { difficulty: 'easy', trails: [] },
@@ -487,79 +369,164 @@ const trailsByDifficulty = computed(() => {
     'extreme': { difficulty: 'extreme', trails: [] },
     'other': { difficulty: '', trails: [] }
   };
-  
-  // Group trails by difficulty
   filteredTrails.value.forEach(trail => {
     if (trail.difficulty && grouped[trail.difficulty]) {
-      grouped[trail.difficulty]?.trails.push(trail);
+      grouped[trail.difficulty].trails.push(trail);
     } else {
-      grouped['other']?.trails.push(trail);
+      grouped['other'].trails.push(trail);
     }
   });
-  
-  // Convert to array and filter out empty groups
   return Object.values(grouped)
     .filter(group => group.trails.length > 0)
     .sort((a, b) => {
-      // Custom sort order: easy, moderate, difficult, extreme, other
       const order: Record<string, number> = { 'easy': 1, 'moderate': 2, 'difficult': 3, 'extreme': 4, '': 5 };
-      return (order[a.difficulty] || 5) - (order[b.difficulty] || 5);
+      return order[a.difficulty || ''] - order[b.difficulty || ''];
     });
 });
 
-// Calculate average rating
-const getAverageRating = (trail: Trail): string => {
-  if (!trail.reviews || trail.reviews.length === 0) return 'N/A';
-  
-  const sum = trail.reviews.reduce((total, review) => total + review.rating, 0);
-  return (sum / trail.reviews.length).toFixed(1);
-};
+// Initialize trails and reset pagination
+async function initTrails() {
+  loading.value = true;
+  try {
+    // Reset pagination values
+    itemsPerPage.value = initialLoadCount.value;
+    currentPage.value = 1;
+    allItemsLoaded.value = false;
 
-// Select a trail
-const selectTrail = (trailId: string) => {
-  selectedTrailId.value = selectedTrailId.value === trailId ? null : trailId;
-};
+    // Fetch regions and statistics
+    regions.value = await fetchRegions();
+    statistics.value = await fetchStatistics();
 
-// Navigate to trail details
-const viewTrailDetails = (trailId: string) => {
-  router.push(`/trails/${trailId}`);
-};
+    // Load initial trails page from API
+    const trailsResponse = await fetchTrails({ maxTrails: itemsPerPage.value }, { loadAll: false });
+    trails.value = trailsResponse;
+    visibleItemsCount.value = Math.min(initialLoadCount.value, trails.value.length);
 
-// View trail on map
-const viewOnMap = (trailId: string) => {
-  viewMode.value = 'map';
-  selectedTrailId.value = trailId;
-};
-
-// Update filters from filter panel
-const updateFilters = (newFilters: { difficulty: string, length: string, elevation: string, region: string }) => {
-  filters.difficulty = newFilters.difficulty;
-  filters.length = newFilters.length;
-  filters.elevation = newFilters.elevation;
-  filters.region = newFilters.region;
-};
-
-// Update search query from filter panel
-const updateSearchQuery = (query: string) => {
-  searchQuery.value = query;
-};
-
-// Update max results when changed from filter panel
-const updateMaxResults = (value: number) => {
-  maxResults.value = value;
-  
-  // Refresh with new max results
-  if (trails.value.length > 0) {
-    fetchTrails({ maxTrails: value });
+    // After initial load, if the document height is too short to trigger scroll,
+    // call loadMoreItems() to fill the page.
+    nextTick(() => {
+      const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
+      if (remaining < loadThreshold) {
+        loadMoreItems();
+      }
+    });
+  } catch (error) {
+    console.error('Failed to load trails:', error);
+  } finally {
+    loading.value = false;
   }
-};
+}
 
-// Reset filters
-const resetFilters = () => {
-  searchQuery.value = '';
+// Handle window scroll event to load more items when near bottom
+function handleScroll() {
+  if (isFetchingMore.value || allItemsLoaded.value) return;
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+  const windowHeight = window.innerHeight || 0;
+  const docHeight = document.documentElement.scrollHeight || 0;
+  const bottomOffset = docHeight - (scrollTop + windowHeight);
+  if (bottomOffset < loadThreshold) {
+    loadMoreItems();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+  initTrails();
+});
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+// Reset pagination when filters/search change
+watch([filters, searchQuery], () => {
+  currentPage.value = 1;
+  visibleItemsCount.value = initialLoadCount.value;
+  allItemsLoaded.value = false;
+  initTrails();
+}, { deep: true });
+
+// Revised loadMoreItems function
+async function loadMoreItems() {
+  if (isFetchingMore.value || allItemsLoaded.value) return;
+
+  // If we already have more items loaded on the client, reveal them first.
+  if (visibleItemsCount.value < filteredTrails.value.length) {
+    isFetchingMore.value = true;
+    await new Promise(resolve => setTimeout(resolve, 200));
+    visibleItemsCount.value = Math.min(
+      visibleItemsCount.value + incrementalLoadCount.value,
+      filteredTrails.value.length
+    );
+    isFetchingMore.value = false;
+    // Check if the page content is still too short and load more if needed.
+    nextTick(() => {
+      const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
+      if (remaining < loadThreshold) {
+        loadMoreItems();
+      }
+    });
+    return;
+  }
+
+  // If we don't have enough client-side items and there are API pages left, load the next page.
+  if (currentPage.value < totalPages.value) {
+    try {
+      isFetchingMore.value = true;
+      const nextPage = currentPage.value + 1;
+      await loadPageData([nextPage]);
+      currentPage.value = nextPage;
+      if (paginatedTrails.value && paginatedTrails.value.length > 0) {
+        trails.value = trails.value.concat(paginatedTrails.value);
+        visibleItemsCount.value = Math.min(
+          visibleItemsCount.value + incrementalLoadCount.value,
+          filteredTrails.value.length
+        );
+      } else {
+        allItemsLoaded.value = true;
+      }
+    } catch (error) {
+      console.error('Failed to load more items:', error);
+    } finally {
+      isFetchingMore.value = false;
+      nextTick(() => {
+        const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
+        if (remaining < loadThreshold) {
+          loadMoreItems();
+        }
+      });
+    }
+    return;
+  }
+
+  // Mark that all available items have been loaded.
+  allItemsLoaded.value = true;
+}
+
+// Navigation and filter update functions
+function updateFilters(newFilters: typeof filters) { 
+  Object.assign(filters, newFilters); 
+}
+function updateSearchQuery(query: string) { 
+  searchQuery.value = query; 
+}
+function updateMaxResults(value: string | number) { 
+  // Not used in this version
+}
+function resetFilters() { 
   filters.difficulty = '';
   filters.length = '';
   filters.elevation = '';
   filters.region = '';
-};
+  searchQuery.value = '';
+}
+function selectTrail(id: string) { 
+  selectedTrailId.value = id; 
+}
+function viewTrailDetails(id: string) { 
+  router.push({ name: 'TrailDetail', params: { id } }); 
+}
+function viewOnMap(id: string) { 
+  router.push({ name: 'Map', query: { trail: id } }); 
+}
 </script>
+

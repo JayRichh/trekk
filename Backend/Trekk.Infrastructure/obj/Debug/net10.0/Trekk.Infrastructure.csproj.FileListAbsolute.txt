@@ -13,3 +13,4 @@ C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.I
 C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\refint\Trekk.Infrastructure.dll
 C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.pdb
 C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\ref\Trekk.Infrastructure.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Infrastructure\obj\Debug\net10.0\Trekk.Infrastructure.sourcelink.json

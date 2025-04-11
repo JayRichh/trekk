@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex flex-col bg-background">
+  <div class="flex flex-col bg-background ">
     <MetaTags />
     <header class="bg-primary-600 text-white shadow-md">
       <div class="container py-4">
@@ -29,6 +29,16 @@
               :class="{ 'active': $route.path.startsWith('/map') }"
             >
               Map
+            </router-link>
+            
+            <!-- Hub link (only for logged in users) -->
+            <router-link 
+              v-if="isLoggedIn"
+              to="/hub" 
+              class="text-white hover:text-white hover:bg-white/20 px-2 py-1 rounded-md font-medium relative nav-link"
+              :class="{ 'active': $route.path.startsWith('/hub') }"
+            >
+              Hub
             </router-link>
             
             <!-- Authentication links -->
@@ -73,7 +83,7 @@
       </div>
     </header>
     
-    <main class="flex-grow">
+    <main class="flex-grow overflow-hidden">
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -81,12 +91,14 @@
       </router-view>
     </main>
     
+    <AppFooter v-if="!$route.path.startsWith('/hub')" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useAuth } from './composables/useAuth';
 import MetaTags from './components/shared/MetaTags.vue';
+import AppFooter from './components/shared/AppFooter.vue';
 
 const { isLoggedIn, userProfile } = useAuth();
 </script>

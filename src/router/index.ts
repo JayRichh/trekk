@@ -55,6 +55,12 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import('../views/auth/Profile.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/hub',
+    name: 'Hub',
+    component: () => import('../views/Hub.vue'),
+    meta: { requiresAuth: true }
+  },
   // Sitemap route
   {
     path: '/sitemap.xml',

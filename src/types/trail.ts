@@ -69,3 +69,26 @@ export interface CacheEntry<T> {
   data: T;
   timestamp: number;
 }
+
+// Statistics for trails
+export interface TrailStatistics {
+  totalCount: number;
+  byRegion: Array<{ id: string; name: string; count: number }>;
+  byDifficulty: Array<{ difficulty: string; count: number }>;
+  byLength: Array<{ 
+    range: string; 
+    label: string;
+    count: number;
+    min: number;
+    max: number | null;
+  }>;
+  totalDistance: number;
+}
+
+// Length range definition
+export interface LengthRange {
+  id: string;
+  label: string;
+  min: number;
+  max: number | null;
+}

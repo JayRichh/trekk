@@ -33,3 +33,4 @@ C:\Users\jsric\Code\trekk\Backend\Trekk.Api\obj\Debug\net10.0\refint\Trekk.Api.d
 C:\Users\jsric\Code\trekk\Backend\Trekk.Api\obj\Debug\net10.0\Trekk.Api.pdb
 C:\Users\jsric\Code\trekk\Backend\Trekk.Api\obj\Debug\net10.0\Trekk.Api.genruntimeconfig.cache
 C:\Users\jsric\Code\trekk\Backend\Trekk.Api\obj\Debug\net10.0\ref\Trekk.Api.dll
+C:\Users\jsric\Code\trekk\Backend\Trekk.Api\obj\Debug\net10.0\Trekk.Api.sourcelink.json

@@ -195,49 +195,7 @@
       </div>
     </section>
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white/90">
-      <div class="container px-4 max-w-7xl mx-auto">
-        <!-- Main footer content -->
-        <div class="py-12 grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div class="md:col-span-1">
-            <h3 class="text-2xl font-bold text-white mb-4">TREKK</h3>
-            <p class="mb-6 max-w-md text-base leading-relaxed">
-              Elevate your hiking experience with interactive 3D maps, detailed trail information, and a community of fellow adventurers.
-            </p>
-          </div>
-          
-          <div>
-            <h4 class="text-lg font-semibold text-white mb-4">Quick Links</h4>
-            <ul class="space-y-3">
-              <li><router-link to="/map" class="text-white/90 hover:text-white transition-colors">Explore Map</router-link></li>
-              <li><router-link to="/trails" class="text-white/90 hover:text-white transition-colors">Browse Trails</router-link></li>
-              <li><router-link to="/signup" class="text-white/90 hover:text-white transition-colors">Create Account</router-link></li>
-              <li><router-link to="/login" class="text-white/90 hover:text-white transition-colors">Sign In</router-link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 class="text-lg font-semibold text-white mb-4">Resources</h4>
-            <ul class="space-y-3">
-              <li><a href="#" class="text-white/90 hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="#" class="text-white/90 hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="#" class="text-white/90 hover:text-white transition-colors">Contact Us</a></li>
-              <li><a href="#" class="text-white/90 hover:text-white transition-colors">Help Center</a></li>
-            </ul>
-          </div>
-        </div>
-        
-        <!-- Copyright bar -->
-        <div class="py-6 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-          <p class="text-sm mb-4 md:mb-0">© 2025 Trekk. All rights reserved.</p>
-          <div class="flex space-x-6">
-            <a href="#" class="text-white/90 hover:text-white transition-colors text-sm">Terms</a>
-            <a href="#" class="text-white/90 hover:text-white transition-colors text-sm">Privacy</a>
-            <a href="#" class="text-white/90 hover:text-white transition-colors text-sm">Contact</a>
-          </div>
-        </div>
-      </div>
-    </footer>
+   
   </div>
 </template>
 
