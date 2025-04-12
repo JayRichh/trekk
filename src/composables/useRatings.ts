@@ -10,12 +10,13 @@ export interface Rating {
   trail_id: string;
   rating: number;
   comment: string | null;
+  tips?: string | null;
   image_url: string | null;
   created_at: string;
   updated_at: string;
   trail?: {
     name: string;
-    imageUrl?: string;
+    imageUrl?: string | null;
   };
 }
 
@@ -99,9 +100,9 @@ export function useRatings() {
     
     try {
       // Generate a unique filename
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split('.').pop() || 'jpg';
       const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `ratings/${user.value.id}/${fileName}`;
+      const filePath = `${user.value.id}/${fileName}`;
       
       // Upload to Supabase storage
       const { error: uploadError } = await supabase.storage
@@ -268,20 +269,59 @@ export function useRatings() {
   const hasUserRatedTrail = async (trailId: string) => {
     if (!user.value) return false;
     
+    // First check if it's in the local ratings data
+    if (ratings.value.length > 0) {
+      const found = ratings.value.some(r => r.trail_id === trailId);
+      console.log(`[DEBUG] Ratings local check for trail ${trailId}: ${found ? 'Found in local state' : 'Not in local state'}`);
+      return found;
+    }
+    
+    console.log(`[DEBUG] No local ratings, checking database for trail ${trailId}`);
+    
     try {
       const { data, error: err } = await supabase
         .from('ratings')
         .select('id')
         .eq('trail_id', trailId)
-        .eq('user_id', user.value.id)
-        .single();
+        .eq('user_id', user.value.id);
         
-      if (err && err.code !== 'PGRST116') throw err; // PGRST116 = Not found
+      if (err) throw err;
       
-      return !!data;
+      // Check if any rows were returned
+      const found = Array.isArray(data) && data.length > 0;
+      console.log(`[DEBUG] Ratings database check result: ${found ? 'Found' : 'Not found'}, rows: ${data?.length || 0}`);
+      
+      // If found but not in local state, refresh local state
+      if (found && ratings.value.length === 0) {
+        console.log(`[DEBUG] Found rating in database but local cache empty, refreshing ratings`);
+        fetchUserRatings();
+      }
+      
+      return found;
     } catch (err) {
       console.error(`Error checking if user rated trail ${trailId}:`, err);
       return false;
+    }
+  };
+  
+  // Get user's rating for a specific trail
+  const getUserRatingForTrail = async (trailId: string) => {
+    if (!user.value) return null;
+    
+    try {
+      const { data, error: err } = await supabase
+        .from('ratings')
+        .select('*')
+        .eq('trail_id', trailId)
+        .eq('user_id', user.value.id);
+        
+      if (err) throw err;
+      
+      // Return the first rating if found
+      return data && data.length > 0 ? data[0] : null;
+    } catch (err) {
+      console.error(`Error fetching user rating for trail ${trailId}:`, err);
+      return null;
     }
   };
 
@@ -295,6 +335,7 @@ export function useRatings() {
     deleteRating,
     fetchTrailRatings,
     hasUserRatedTrail,
+    getUserRatingForTrail,
     uploadRatingImage
   };
 }

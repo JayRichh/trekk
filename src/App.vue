@@ -93,11 +93,54 @@
 
 <script setup lang="ts">
 import { useAuth } from './composables/useAuth';
+import { useWishlist } from './composables/useWishlist';
+import { useGoals } from './composables/useGoals';
+import { useRatings } from './composables/useRatings';
+import { onMounted, watch } from 'vue';
 import MetaTags from './components/shared/MetaTags.vue';
 import AppFooter from './components/shared/AppFooter.vue';
 import RouterViewWrapper from './components/shared/RouterViewWrapper.vue';
 
-const { isLoggedIn, userProfile } = useAuth();
+const { isLoggedIn, userProfile, user } = useAuth();
+const { fetchUserWishlist } = useWishlist();
+const { fetchUserGoals } = useGoals();
+const { fetchUserRatings } = useRatings();
+
+// Preload user data when logged in
+onMounted(async () => {
+  if (isLoggedIn.value) {
+    console.log('[DEBUG] Preloading user data on app mount');
+    try {
+      // Use Promise.all to load data concurrently, but ensure all promises are awaited
+      await Promise.all([
+        fetchUserWishlist(),
+        fetchUserGoals(),
+        fetchUserRatings()
+      ]);
+      console.log('[DEBUG] Initial data loading complete');
+    } catch (error) {
+      console.error('[DEBUG] Error preloading user data:', error);
+    }
+  }
+});
+
+// Watch for login state changes to preload data
+watch(() => isLoggedIn.value, async (newValue) => {
+  if (newValue) {
+    console.log('[DEBUG] User logged in, preloading data');
+    try {
+      // Use Promise.all to load data concurrently, but ensure all promises are awaited
+      await Promise.all([
+        fetchUserWishlist(),
+        fetchUserGoals(),
+        fetchUserRatings()
+      ]);
+      console.log('[DEBUG] Login data loading complete');
+    } catch (error) {
+      console.error('[DEBUG] Error loading user data after login:', error);
+    }
+  }
+});
 </script>
 
 <style scoped>

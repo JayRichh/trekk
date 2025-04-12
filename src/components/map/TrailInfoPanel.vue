@@ -1,7 +1,7 @@
 <template>
   <div 
     v-if="trail" 
-    class="absolute bottom-4 bg-surface shadow-card rounded-md overflow-hidden z-20 w-72 card transition-all duration-300"
+    class="absolute bottom-4 bg-surface shadow-card rounded-md overflow-hidden z-20 w-96 card transition-all duration-300"
     :class="[
       isSidebarOpen ? 'left-[calc(350px+1rem)]' : 'left-4'
     ]"
@@ -54,20 +54,28 @@
       
       <p class="text-sm text-text-light line-clamp-3">{{ trail.description }}</p>
       
-      <div class="flex justify-between items-center">
-        <RatingButton 
-          v-if="isLoggedIn"
-          :trail-id="trail.id"
-          buttonText="Rate"
-          icon-only
-          button-class="text-yellow-500 hover:text-yellow-600 flex items-center"
-        />
-        <router-link 
-          :to="`/trails/${trail.id}`"
-          class="btn btn-sm btn-accent"
-        >
-          View Details
-        </router-link>
+      <div class="flex flex-col gap-3">
+        <div class="flex justify-between items-center">
+          <TrailActions 
+            v-if="isLoggedIn"
+            :trail-id="trail.id"
+            :icon-only="false"
+            size="sm"
+            button-style="outline"
+            @wishlist-updated="onWishlistUpdated"
+            @rating-saved="onRatingSaved"
+            @goal-updated="onGoalUpdated"
+          />
+        </div>
+        
+        <div class="flex justify-end">
+          <router-link 
+            :to="`/trails/${trail.id}`"
+            class="btn btn-sm btn-accent w-full"
+          >
+            View Full Details
+          </router-link>
+        </div>
       </div>
     </div>
   </div>
@@ -77,7 +85,7 @@
 import { defineProps, defineEmits } from 'vue';
 import type { Trail } from '@/types/trail';
 import { useAuth } from '@/composables/useAuth';
-import RatingButton from '@/components/ratings/RatingButton.vue';
+import TrailActions from '@/components/trails/TrailActions.vue';
 
 const props = defineProps<{
   trail: Trail | null;
@@ -89,4 +97,20 @@ defineEmits<{
 }>();
 
 const { isLoggedIn } = useAuth();
+
+// Event handlers for trail actions
+const onWishlistUpdated = (inWishlist: boolean) => {
+  console.log(`Trail ${inWishlist ? 'added to' : 'removed from'} wishlist`);
+  // You could add a toast notification here in a real implementation
+};
+
+const onRatingSaved = (rating: any) => {
+  console.log('Rating saved:', rating);
+  // Refresh trail data if needed
+};
+
+const onGoalUpdated = (isGoal: boolean) => {
+  console.log(`Trail ${isGoal ? 'added to' : 'removed from'} goals`);
+  // You could add a toast notification here in a real implementation
+};
 </script>

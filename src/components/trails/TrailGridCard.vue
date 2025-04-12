@@ -71,14 +71,27 @@
       <p class="text-sm text-text-light mb-4 line-clamp-3 flex-grow">{{ trail.description || 'No description available.' }}</p>
       
       <!-- Action buttons -->
-      <div class="flex justify-between items-center mt-auto">
-        <button class="btn btn-sm btn-accent" @click.stop="$emit('view-details')">View Details</button>
-        <button class="btn btn-sm btn-ghost" @click.stop="$emit('view-on-map')">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
-            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6l-6 6"/>
-          </svg>
-          Map
-        </button>
+      <div class="flex flex-col gap-3 mt-auto">
+        <TrailActions 
+          v-if="isLoggedIn"
+          :trail-id="trail.id"
+          icon-only
+          size="sm"
+          button-style="ghost"
+          @click.stop
+          @wishlist-updated="onWishlistUpdated"
+          @rating-saved="onRatingSaved"
+          @goal-updated="onGoalUpdated"
+        />
+        <div class="flex justify-between items-center">
+          <button class="btn btn-sm btn-accent" @click.stop="$emit('view-details')">View Details</button>
+          <button class="btn btn-sm btn-ghost" @click.stop="$emit('view-on-map')">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6l-6 6"/>
+            </svg>
+            Map
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -87,17 +100,34 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Trail } from '@/types/trail';
+import TrailActions from './TrailActions.vue';
+import { useAuth } from '@/composables/useAuth';
 
 const props = defineProps<{
   trail: Trail;
   isSelected?: boolean;
 }>();
 
+const { isLoggedIn } = useAuth();
+
 defineEmits<{
   (e: 'click'): void;
   (e: 'view-details'): void;
   (e: 'view-on-map'): void;
 }>();
+
+// Event handlers for trail actions
+const onWishlistUpdated = (inWishlist: boolean) => {
+  console.log(`Trail ${props.trail.id} ${inWishlist ? 'added to' : 'removed from'} wishlist`);
+};
+
+const onRatingSaved = (rating: any) => {
+  console.log('Rating saved:', rating);
+};
+
+const onGoalUpdated = (isGoal: boolean) => {
+  console.log(`Trail ${props.trail.id} ${isGoal ? 'added to' : 'removed from'} goals`);
+};
 
 // Check if trail has ratings
 const hasRatings = computed(() => props.trail.reviews && props.trail.reviews.length > 0);

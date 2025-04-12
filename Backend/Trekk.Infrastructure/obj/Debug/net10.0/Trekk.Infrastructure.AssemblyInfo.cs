@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Trekk.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48314835c96aefa1c1ba7873002c766968b3efeb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bd88700dbc62db2435949f20c0ea343fe5545341")]
 [assembly: System.Reflection.AssemblyProductAttribute("Trekk.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Trekk.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

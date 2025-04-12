@@ -20,7 +20,7 @@
       <div class="mb-8">
         <div>
           <h1 class="text-4xl font-bold text-primary mb-2">{{ trail.name }}</h1>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-4 mb-3">
             <div class="px-2 py-1 rounded text-xs font-semibold uppercase"
               :class="{
                 'bg-green-500 text-white': trail.difficulty === 'easy',
@@ -37,6 +37,19 @@
               <span>{{ getAverageRating(trail) }}</span>
               <span class="ml-1">({{ trail.reviews.length }} reviews)</span>
             </div>
+          </div>
+          
+          <!-- Trail Actions -->
+          <div class="flex items-center gap-3 mb-3">
+            <TrailActions 
+              v-if="isLoggedIn"
+              :trail-id="trail.id"
+              :icon-only="false"
+              size="md"
+              button-style="outline"
+              @wishlist-updated="onWishlistUpdated"
+              @rating-saved="onRatingsUpdated"
+            />
           </div>
         </div>
       </div>
@@ -272,6 +285,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import LoadingSpinner from '../components/shared/LoadingSpinner.vue';
 import RatingList from '../components/ratings/RatingList.vue';
+import TrailActions from '../components/trails/TrailActions.vue';
 import { useRoute, useRouter } from 'vue-router';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -564,6 +578,12 @@ const onRatingsUpdated = async () => {
   } catch (error) {
     console.error('Failed to refresh trail data:', error);
   }
+};
+
+// Handle wishlist updates
+const onWishlistUpdated = (inWishlist: boolean) => {
+  console.log(`Trail ${inWishlist ? 'added to' : 'removed from'} wishlist`);
+  // Could add a toast notification here in a real implementation
 };
 
 // Submit review

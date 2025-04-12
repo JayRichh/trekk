@@ -13,9 +13,9 @@ export interface WishlistItem {
   updated_at: string;
   trail?: {
     name: string;
-    imageUrl?: string;
-    difficulty?: string;
-    length?: number;
+    imageUrl?: string | null;
+    difficulty?: string | null;
+    length?: number | null;
   };
 }
 
@@ -27,10 +27,14 @@ export function useWishlist() {
 
   // Fetch all wishlist items for the current user
   const fetchUserWishlist = async () => {
-    if (!user.value) return;
+    if (!user.value) {
+      console.log('[DEBUG] fetchUserWishlist: No user found, skipping fetch');
+      return;
+    }
     
     loading.value = true;
     error.value = null;
+    console.log(`[DEBUG] fetchUserWishlist: Fetching wishlist for user ${user.value.id}`);
     
     try {
       const { data, error: err } = await supabase
@@ -42,16 +46,20 @@ export function useWishlist() {
         
       if (err) throw err;
       
+      console.log(`[DEBUG] fetchUserWishlist: Retrieved ${data?.length || 0} wishlist items`);
       wishlistItems.value = data || [];
       
       // Load trail info for each wishlist item
       await loadTrailDetails();
+      console.log(`[DEBUG] fetchUserWishlist: Loaded trail details, wishlist ready`);
     } catch (err: any) {
       console.error('Error fetching wishlist:', err);
       error.value = err.message || 'Failed to fetch wishlist';
     } finally {
       loading.value = false;
     }
+    
+    return wishlistItems.value;
   };
   
   // Load trail details for all wishlist items
@@ -132,14 +140,17 @@ export function useWishlist() {
         // Load trail details for the new item
         try {
           const trail = await apiService.getTrailById(trailId);
-          const index = wishlistItems.value.findIndex(item => item.id === data.id);
-          if (index !== -1) {
-            wishlistItems.value[index].trail = {
-              name: trail.name,
-              imageUrl: trail.imageUrl,
-              difficulty: trail.difficulty,
-              length: trail.length
-            };
+          // Check if data and wishlistItems still exist (might have changed during async operation)
+          if (data && wishlistItems.value) {
+            const index = wishlistItems.value.findIndex(item => item.id === data.id);
+            if (index !== -1 && wishlistItems.value[index]) {
+              wishlistItems.value[index].trail = {
+                name: trail.name || 'Unknown',
+                imageUrl: trail.imageUrl || null,
+                difficulty: trail.difficulty || null,
+                length: trail.length || null
+              };
+            }
           }
         } catch (error) {
           console.error(`Error fetching trail details for ${trailId}:`, error);
@@ -225,23 +236,52 @@ export function useWishlist() {
   const isInWishlist = async (trailId: string): Promise<boolean> => {
     if (!user.value) return false;
     
-    // Check local state first
-    if (wishlistItems.value.length > 0) {
-      return wishlistItems.value.some(item => item.trail_id === trailId);
+    console.log(`[DEBUG] isInWishlist: Checking trail ${trailId} for user ${user.value.id}`);
+    
+    // Always ensure we have the latest wishlist data
+    if (wishlistItems.value.length === 0) {
+      console.log(`[DEBUG] isInWishlist: Local wishlist empty, fetching from database first`);
+      await fetchUserWishlist();
     }
     
-    // Otherwise, check database
+    // Check local state first after ensuring it's loaded
+    if (wishlistItems.value.length > 0) {
+      const found = wishlistItems.value.some(item => item.trail_id === trailId);
+      console.log(`[DEBUG] isInWishlist: Local state check result: ${found ? 'Found in local state' : 'Not in local state'}`);
+      
+      if (found) return true;
+    }
+    
+    console.log(`[DEBUG] isInWishlist: Not found in local state, checking database directly`);
+    
+    // Double check with database for certainty
     try {
       const { data, error: err } = await supabase
         .from('wishlists')
-        .select('id')
+        .select('id, trail_id, user_id')
         .eq('trail_id', trailId)
-        .eq('user_id', user.value.id)
-        .single();
-        
-      if (err && err.code !== 'PGRST116') throw err; // PGRST116 = Not found
+        .eq('user_id', user.value.id);
       
-      return !!data;
+      if (err) {
+        console.error(`[DEBUG] isInWishlist: Database query error:`, err);
+        throw err;
+      }
+      
+      // Log the exact parameters and results for debugging
+      console.log(`[DEBUG] isInWishlist: Database query parameters - trail_id: "${trailId}", user_id: "${user.value.id}"`);
+      console.log(`[DEBUG] isInWishlist: Database query result:`, data);
+      
+      // Check if any rows were returned
+      const found = Array.isArray(data) && data.length > 0;
+      console.log(`[DEBUG] isInWishlist: Database check result: ${found ? `Found with id ${data?.[0]?.id}` : 'Not found'}, rows: ${data?.length || 0}`);
+      
+      // If found in database but not in local state, refresh local state
+      if (found && !wishlistItems.value.some(item => item.trail_id === trailId)) {
+        console.log(`[DEBUG] isInWishlist: Data inconsistency detected, refreshing wishlist`);
+        await fetchUserWishlist();
+      }
+      
+      return found;
     } catch (err) {
       console.error(`Error checking if trail ${trailId} is in wishlist:`, err);
       return false;
