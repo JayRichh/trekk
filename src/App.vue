@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col bg-background ">
+  <div class="flex flex-col bg-background min-h-screen">
     <MetaTags />
-    <header class="bg-primary-600 text-white shadow-md">
+    <header class="bg-primary-600 text-white shadow-md sticky top-0 z-50">
       <div class="container py-4">
         <div class="flex items-center justify-between">
           <router-link to="/" class="text-2xl font-bold tracking-tight text-white hover:text-white hover:underline">
@@ -84,11 +84,7 @@
     </header>
     
     <main class="flex-grow overflow-hidden">
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <RouterViewWrapper />
     </main>
     
     <AppFooter v-if="!$route.path.startsWith('/hub')" />
@@ -99,6 +95,7 @@
 import { useAuth } from './composables/useAuth';
 import MetaTags from './components/shared/MetaTags.vue';
 import AppFooter from './components/shared/AppFooter.vue';
+import RouterViewWrapper from './components/shared/RouterViewWrapper.vue';
 
 const { isLoggedIn, userProfile } = useAuth();
 </script>
@@ -123,5 +120,10 @@ const { isLoggedIn, userProfile } = useAuth();
 /* Special styling for signup button */
 .active-signup {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+}
+
+/* Ensure content area is always at least viewport height minus header */
+main {
+  min-height: calc(100vh - 4rem);
 }
 </style>

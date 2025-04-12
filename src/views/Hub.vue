@@ -1,6 +1,6 @@
 <template>
   <div class="hub-view-container">
-    <HubLayout :sections="dashboardSections">
+    <HubLayout :sections="dashboardSections" v-if="!loading">
       <!-- Section slots are passed to the HubLayout component -->
       <template #section-welcome>
         <UserWelcome />
@@ -37,15 +37,22 @@ import { defaultSections } from '../config/dashboard-config';
 
 // Initialize dashboard sections from config
 const dashboardSections = ref(defaultSections);
+const loading = ref(true);
 
-onMounted(() => {
-  // Any additional setup logic can go here
+onMounted(async () => {
   document.title = 'My Dashboard | Trekk';
+  
+  // Allow time for child components to fetch data
+  // In a real app, we could coordinate with actual API requests
+  setTimeout(() => {
+    loading.value = false;
+  }, 500);
 });
 </script>
 
 <style scoped>
 .hub-view-container {
-overflow: hidden;
+  overflow: hidden;
+  min-height: calc(100vh - 4rem);
 }
 </style>

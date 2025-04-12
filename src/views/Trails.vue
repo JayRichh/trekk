@@ -61,8 +61,15 @@
         </div>
         
         <div class="lg:w-2/3 xl:w-3/4">
-          <div v-if="loading" class="flex flex-col items-center justify-center py-8 text-text-muted">
-            <LoadingSpinner :loading="loading" :show-progress="true" class="mb-4" />
+          <div v-if="loading" class="flex flex-col items-center justify-center py-8 text-text-muted min-h-[50vh]">
+            <LoadingSpinner 
+              ref="loadingSpinner"
+              :loading="loading" 
+              :show-progress="true" 
+              :external-control="true"
+              initial-progress-text="Initializing trails..."
+              class="mb-4" 
+            />
           </div>
           
           <div v-else-if="filteredTrails.length === 0" class="text-center py-8 text-text-muted flex flex-col items-center bg-white rounded-lg shadow-md p-8">
@@ -272,8 +279,25 @@ import TrailMapView from '@/components/trails/TrailMapView.vue';
 
 const router = useRouter();
 
+// Define loading steps with progress percentages
+const LOADING_STEPS = {
+  START: { progress: 5, text: 'Initializing trails data...' },
+  FETCH_METADATA: { progress: 30, text: 'Loading regions and statistics...' },
+  FETCH_TRAILS: { progress: 70, text: 'Retrieving trail information...' },
+  PROCESSING: { progress: 90, text: 'Processing trail data...' },
+  COMPLETE: { progress: 100, text: 'Loading complete!' }
+};
+
 // State & Filters
 const loading = ref(true);
+const loadingSpinner = ref<InstanceType<typeof LoadingSpinner> | null>(null);
+
+// Helper function for safely updating progress
+function updateLoadingProgress(progress: number, text: string): void {
+  if (loadingSpinner.value) {
+    loadingSpinner.value.updateProgress(progress, text);
+  }
+}
 const searchQuery = ref('');
 const filters = reactive({ difficulty: '', length: '', elevation: '', region: '' });
 const viewMode = ref<'grid' | 'list' | 'map'>('grid');
@@ -387,20 +411,65 @@ const trailsByDifficulty = computed(() => {
 // Initialize trails and reset pagination
 async function initTrails() {
   loading.value = true;
+  
   try {
+    // Start - 5%
+    updateLoadingProgress(
+      LOADING_STEPS.START.progress, 
+      LOADING_STEPS.START.text
+    );
+    
     // Reset pagination values
     itemsPerPage.value = initialLoadCount.value;
     currentPage.value = 1;
     allItemsLoaded.value = false;
+    
+    // Short delay to show initial state
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Fetch regions and statistics
-    regions.value = await fetchRegions();
-    statistics.value = await fetchStatistics();
+    // Metadata loading - 30%
+    updateLoadingProgress(
+      LOADING_STEPS.FETCH_METADATA.progress, 
+      LOADING_STEPS.FETCH_METADATA.text
+    );
+    
+    // Start fetching data
+    const regionsPromise = fetchRegions();
+    const statisticsPromise = fetchStatistics();
+    
+    // Wait for both to complete
+    const [regionsData, statsData] = await Promise.all([regionsPromise, statisticsPromise]);
+    
+    // Set regions and statistics with null checks
+    regions.value = regionsData || [];
+    statistics.value = statsData || null;
+    
+    // Update to 70% - fetching trails
+    updateLoadingProgress(
+      LOADING_STEPS.FETCH_TRAILS.progress, 
+      LOADING_STEPS.FETCH_TRAILS.text
+    );
 
     // Load initial trails page from API
     const trailsResponse = await fetchTrails({ maxTrails: itemsPerPage.value }, { loadAll: false });
+    
+    // Processing - 90%
+    updateLoadingProgress(
+      LOADING_STEPS.PROCESSING.progress, 
+      LOADING_STEPS.PROCESSING.text
+    );
+    
     trails.value = trailsResponse;
     visibleItemsCount.value = Math.min(initialLoadCount.value, trails.value.length);
+
+    // Complete - 100%
+    updateLoadingProgress(
+      LOADING_STEPS.COMPLETE.progress, 
+      LOADING_STEPS.COMPLETE.text
+    );
+    
+    // Add a slight delay to ensure smooth transition
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // After initial load, if the document height is too short to trigger scroll,
     // call loadMoreItems() to fill the page.
@@ -412,8 +481,14 @@ async function initTrails() {
     });
   } catch (error) {
     console.error('Failed to load trails:', error);
+    // Show error in loading spinner
+    updateLoadingProgress(100, 'Error loading trails');
   } finally {
-    loading.value = false;
+    // Small delay to show the 100% state
+    setTimeout(() => {
+      // Ensure loading state is always properly cleared, even on error
+      loading.value = false;
+    }, 300);
   }
 }
 
@@ -529,4 +604,3 @@ function viewOnMap(id: string) {
   router.push({ name: 'Map', query: { trail: id } }); 
 }
 </script>
-

@@ -24,24 +24,36 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 const props = defineProps<{
   loading: boolean;
   showProgress?: boolean;
+  externalControl?: boolean;
+  initialProgressText?: string;
 }>();
 
+const emit = defineEmits(['update:progress', 'update:progressText']);
+
 const progress = ref(0);
-const progressText = ref('Loading trails...');
+const progressText = ref(props.initialProgressText || 'Loading...');
 let interval: ReturnType<typeof setInterval> | null = null;
 
 // Simulate progress for long-running operations
 watch(() => props.loading, (isLoading) => {
-  if (isLoading && props.showProgress) {
-    // Reset progress when loading starts
+  if (isLoading && props.showProgress && !props.externalControl) {
+    // Reset progress when loading starts and not externally controlled
     progress.value = 0;
     startProgressSimulation();
   } else if (!isLoading && interval) {
-  // Clear interval when loading stops
+    // Clear interval when loading stops
     window.clearInterval(interval);
     interval = null;
   }
 });
+
+// Update progress and text externally
+function updateProgress(value: number, text?: string) {
+  progress.value = Math.min(Math.max(0, value), 100);
+  if (text) progressText.value = text;
+  emit('update:progress', progress.value);
+  if (text) emit('update:progressText', text);
+}
 
 function startProgressSimulation() {
   // Clear any existing interval
@@ -54,15 +66,15 @@ function startProgressSimulation() {
     if (progress.value < 30) {
       // Initial phase - loading data
       progress.value += 2;
-      progressText.value = 'Loading trail data...';
+      progressText.value = 'Loading data...';
     } else if (progress.value < 60) {
       // Middle phase - slower progress
       progress.value += 1;
-      progressText.value = 'Processing trail ratings...';
+      progressText.value = 'Processing data...';
     } else if (progress.value < 90) {
       // Final phase - very slow
       progress.value += 0.5;
-      progressText.value = 'Preparing map data...';
+      progressText.value = 'Finalizing...';
     } else if (progress.value < 98) {
       // Almost done
       progress.value += 0.2;
@@ -75,14 +87,29 @@ function startProgressSimulation() {
       clearInterval((interval as ReturnType<typeof setInterval>));
       interval = null;
     }
+    
+    emit('update:progress', progress.value);
+    emit('update:progressText', progressText.value);
   }, 150);
 }
+
+// Expose methods to parent components
+defineExpose({
+  updateProgress
+});
 
 // Clean up interval on component unmount
 onUnmounted(() => {
   if (interval !== null) {
     window.clearInterval(interval);
     interval = null;
+  }
+});
+
+// If initial progress text is provided, use it
+onMounted(() => {
+  if (props.initialProgressText) {
+    progressText.value = props.initialProgressText;
   }
 });
 </script>

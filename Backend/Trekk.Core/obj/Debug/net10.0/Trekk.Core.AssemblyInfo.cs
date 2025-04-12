@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Trekk.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9e5790246559df12ddee7b13581a6f2fa50e1640")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+48314835c96aefa1c1ba7873002c766968b3efeb")]
 [assembly: System.Reflection.AssemblyProductAttribute("Trekk.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Trekk.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

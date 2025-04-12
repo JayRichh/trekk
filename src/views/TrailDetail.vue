@@ -201,7 +201,16 @@
     </div>
     
     <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500">
-      <LoadingSpinner :loading="loading" :show-progress="true" />
+      <!-- Content-specific loading spinner (not a full-page loader) -->
+      <div class="bg-white p-4 rounded-lg shadow-md">
+        <LoadingSpinner 
+          ref="loadingSpinnerRef"
+          :loading="isContentLoading" 
+          :show-progress="true"
+          :external-control="true"
+          initial-progress-text="Loading trail details..." 
+        />
+      </div>
     </div>
     
     <!-- Review Modal -->
@@ -278,9 +287,25 @@ const elevationProfileContainer = ref<HTMLElement | null>(null);
 let map: mapboxgl.Map | null = null;
 let is3D = ref(true);
 
+// Define loading steps with progress percentages
+const LOADING_STEPS = {
+  START: { progress: 5, text: 'Initializing...' },
+  FETCH_TRAIL: { progress: 40, text: 'Loading trail data...' },
+  PREPARE_MAP: { progress: 70, text: 'Preparing map...' },
+  COMPLETE: { progress: 100, text: 'Ready!' }
+};
+
 // Trail data
 const trail = ref<Trail | null>(null);
-const loading = ref(true);
+const isContentLoading = ref(true); // Renamed to avoid conflict with global loading
+const loadingSpinnerRef = ref<InstanceType<typeof LoadingSpinner> | null>(null);
+
+// Helper function for safely updating content loading progress
+function updateContentProgress(progress: number, text: string): void {
+  if (loadingSpinnerRef.value && isContentLoading.value) {
+    loadingSpinnerRef.value.updateProgress(progress, text);
+  }
+}
 
 // Authentication state
 const { isLoggedIn } = useAuth();
@@ -295,21 +320,46 @@ const reviewForm = ref({
   photos: [] as string[]
 });
 
-// Load trail data
+// Load trail data - This will run after RouterViewWrapper completes its loading
 onMounted(async () => {
   const trailId = route.params.id as string;
+  isContentLoading.value = true;
   
   try {
+    // Start - 5%
+    updateContentProgress(LOADING_STEPS.START.progress, LOADING_STEPS.START.text);
+    
+    // Short delay to show initial state
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Fetch trail data - 40%
+    updateContentProgress(LOADING_STEPS.FETCH_TRAIL.progress, LOADING_STEPS.FETCH_TRAIL.text);
+    
     // Load trail data from API
     const trailData = await apiService.getTrailById(trailId);
     trail.value = trailData;
     
+    // Prepare map - 70%
+    updateContentProgress(LOADING_STEPS.PREPARE_MAP.progress, LOADING_STEPS.PREPARE_MAP.text);
+    
     // Initialize map after data is loaded
     initializeMap();
+    
+    // Complete - 100%
+    updateContentProgress(LOADING_STEPS.COMPLETE.progress, LOADING_STEPS.COMPLETE.text);
+    
+    // Small delay to show completion state
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
   } catch (error) {
     console.error('Failed to load trail details:', error);
+    // Show error in loading spinner
+    updateContentProgress(100, 'Error loading trail details');
   } finally {
-    loading.value = false;
+    // Add slight delay before hiding loading spinner
+    setTimeout(() => {
+      isContentLoading.value = false;
+    }, 200);
   }
 });
 

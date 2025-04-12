@@ -10,7 +10,7 @@
     <MapSidebar
       :trails="trails"
       :regions="regions"
-      :loading="loading"
+      :loading="isContentLoading"
       :is-open="isSidebarOpen"
       :selected-trail-index="selectedTrailIndex"
       @update:is-open="isSidebarOpen = $event"
@@ -62,8 +62,18 @@
       @close="selectedTrail = null"
     />
     
-    <!-- Loading Spinner with Progress Bar -->
-    <LoadingSpinner :loading="loading" :show-progress="true" />
+    <!-- Content-specific loading spinner -->
+    <div v-if="isContentLoading" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+      <div class="bg-white p-4 rounded-lg shadow-md">
+        <LoadingSpinner 
+          ref="loadingSpinnerRef"
+          :loading="isContentLoading" 
+          :show-progress="true"
+          :external-control="true"
+          initial-progress-text="Initializing map..." 
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -91,7 +101,7 @@ const mapContainer = ref<HTMLElement | null>(null);
 let map: mapboxgl.Map | null = null;
 const isSidebarOpen = ref(true);
 const searchQuery = ref('');
-const loading = ref(false);
+const isContentLoading = ref(false); // Renamed to avoid conflict with global loading
 const selectedTrail = ref<Trail | null>(null);
 const selectedTrailIndex = ref<number | null>(null);
 const maxResults = ref<number>(9999); // Load all trails without practical limit
@@ -111,28 +121,77 @@ const regions = ref<Region[]>([]);
 // Current view mode
 const currentViewMode = ref('3d-terrain');
 
-// Initialization
-onMounted(async () => {
-  // Fetch trails and regions data
-  loading.value = true;
-  await loadInitialData();
-  
-  // Initialize the map
-  initMap();
-  
-  // Check for trail ID in query parameters (coming from TrailDetail view)
-  const trailId = route.query.trail as string;
-  if (trailId && trails.value.length > 0) {
-    const trailToSelect = trails.value.find(t => t.id === trailId);
-    if (trailToSelect) {
-      // Wait a bit for the map to fully initialize
-      setTimeout(() => {
-        selectTrail(trailToSelect, trails.value.indexOf(trailToSelect));
-      }, 500);
-    }
+// Define loading steps with progress percentages
+const LOADING_STEPS = {
+  START: { progress: 5, text: 'Initializing map...' },
+  LOAD_TERRAIN: { progress: 25, text: 'Loading terrain data...' },
+  FETCH_DATA: { progress: 50, text: 'Fetching trail data...' },
+  RENDER_MAP: { progress: 75, text: 'Rendering map...' },
+  COMPLETE: { progress: 100, text: 'Map ready!' }
+};
+
+// Ref for loading spinner
+const loadingSpinnerRef = ref<InstanceType<typeof LoadingSpinner> | null>(null);
+
+// Helper function for safely updating content loading progress
+function updateContentProgress(progress: number, text: string): void {
+  if (loadingSpinnerRef.value && isContentLoading.value) {
+    loadingSpinnerRef.value.updateProgress(progress, text);
   }
-  
-  loading.value = false;
+}
+
+// Initialization - Runs after RouterViewWrapper completes its loading
+onMounted(async () => {
+  try {
+    // Fetch trails and regions data
+    isContentLoading.value = true;
+    
+    // Start - 5%
+    updateContentProgress(LOADING_STEPS.START.progress, LOADING_STEPS.START.text);
+    
+    // Start map initialization concurrently with data loading
+    updateContentProgress(LOADING_STEPS.LOAD_TERRAIN.progress, LOADING_STEPS.LOAD_TERRAIN.text);
+    
+    // Initialize the map
+    initMap();
+    
+    // Fetch data - 50%
+    updateContentProgress(LOADING_STEPS.FETCH_DATA.progress, LOADING_STEPS.FETCH_DATA.text);
+    
+    // Start data loading
+    const dataPromise = loadInitialData();
+    
+    // Wait for data to be loaded
+    await dataPromise;
+    
+    // Render map - 75%
+    updateContentProgress(LOADING_STEPS.RENDER_MAP.progress, LOADING_STEPS.RENDER_MAP.text);
+    
+    // Check for trail ID in query parameters (coming from TrailDetail view)
+    const trailId = route.query.trail as string;
+    if (trailId && trails.value.length > 0) {
+      const trailToSelect = trails.value.find(t => t.id === trailId);
+      if (trailToSelect) {
+        // Wait a bit for the map to fully initialize
+        setTimeout(() => {
+          selectTrail(trailToSelect, trails.value.indexOf(trailToSelect));
+        }, 500);
+      }
+    }
+    
+    // Complete - 100%
+    updateContentProgress(LOADING_STEPS.COMPLETE.progress, LOADING_STEPS.COMPLETE.text);
+    
+  } catch (error) {
+    console.error('Error initializing map view:', error);
+    // Show error in loading spinner
+    updateContentProgress(100, 'Error loading map');
+  } finally {
+    // Ensure loading is set to false even if there was an error
+    setTimeout(() => {
+      isContentLoading.value = false;
+    }, 500); // Small delay to ensure smooth transition
+  }
 });
 
 // Clean up
@@ -167,8 +226,11 @@ async function loadInitialData() {
     
     // Fetch map examples (optional)
     await getMapboxExamples('terrain');
+    
+    return true;
   } catch (error) {
     console.error('Error loading initial data:', error);
+    throw error;
   }
 }
 
