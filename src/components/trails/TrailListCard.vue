@@ -8,17 +8,11 @@
       <!-- Trail image -->
       <div class="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-gray-100 relative">
         <img 
-          v-if="trail.imageUrl"
-          :src="trail.imageUrl" 
+          :src="trailImageUrl" 
           :alt="trail.name" 
           class="w-full h-full object-cover"
           loading="lazy"
         />
-        <div v-else class="w-full h-full flex items-center justify-center bg-gray-200">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" class="text-text-light">
-            <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19h18M5 17h.01M7 10h.01M11 13h.01M13 7h.01M17 13h.01M19 7l-4 6 -4 -3 -4 6"/>
-          </svg>
-        </div>
         
         <!-- Difficulty badge -->
         <div class="absolute top-1 right-1 badge badge-sm"
@@ -113,6 +107,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Trail } from '@/types/trail';
+import { getTrailImageUrl, getDefaultTrailImage } from '@/utils/imageUtils';
 
 const props = defineProps<{
   trail: Trail;
@@ -124,6 +119,11 @@ defineEmits<{
   (e: 'view-details'): void;
   (e: 'view-on-map'): void;
 }>();
+
+// Generate trail image URL using Lorem Picsum
+const trailImageUrl = computed(() => {
+  return props.trail.imageUrl || getTrailImageUrl(props.trail.id, 120, 120);
+});
 
 // Check if trail has ratings
 const hasRatings = computed(() => props.trail.reviews && props.trail.reviews.length > 0);

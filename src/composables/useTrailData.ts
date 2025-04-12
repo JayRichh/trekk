@@ -1,4 +1,4 @@
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import type { Trail, Region, TrailFilters, TrailStatistics } from '../types/trail';
 import { apiService } from '../services/apiService';
 
@@ -11,63 +11,34 @@ export function useTrailData() {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const currentPage = ref(1);
-  const itemsPerPage = ref(12);
-  const prefetchAmount = ref(2); // Number of pages to prefetch ahead
+  const itemsPerPage = ref(100); // Increased from 12 to load more trails at once
+  const prefetchAmount = ref(5); // Increased from 2 to prefetch more aggressively
   const isFetchingMore = ref(false);
   const totalTrailCount = ref(0); // Total count of trails (may be more than what's loaded)
   const lastAppliedFilters = ref<TrailFilters | undefined>(); // Track filter state
 
-  // Track which pages have been loaded
+  // Track which pages have been loaded and prefetched
   const loadedPages = ref<Set<number>>(new Set([1]));
+  const prefetchedPages = ref<Set<number>>(new Set([1]));
 
-  // Watch currentPage to load more data as needed
+  // Watch currentPage to prefetch data as needed
   watch(currentPage, async (newPage) => {
-    // Calculate which pages should be loaded (current page and a few pages ahead)
+    // Calculate which pages should be prefetched (current page and a few pages ahead)
     const pagesToLoad = [];
     for (let i = newPage; i <= newPage + prefetchAmount.value; i++) {
-      if (i <= totalPages.value && !loadedPages.value.has(i)) {
+      if (i <= totalPages.value && !prefetchedPages.value.has(i)) {
         pagesToLoad.push(i);
+        prefetchedPages.value.add(i);
       }
     }
     
     if (pagesToLoad.length > 0) {
-      await loadPageData(pagesToLoad);
+      // We'll run this in the background but not wait for it
+      loadPageData(pagesToLoad, true).catch(err => {
+        console.error('Failed to prefetch pages:', err);
+      });
     }
   });
-  
-  // Listen for scroll events to prefetch additional pages when user gets close to the bottom
-  onMounted(() => {
-    window.addEventListener('scroll', handleScroll);
-  });
-  
-  onUnmounted(() => {
-    window.removeEventListener('scroll', handleScroll);
-  });
-  
-  // Handle scroll events to prefetch data
-  const handleScroll = debounce(() => {
-    if (isFetchingMore.value) return;
-    
-    const scrollPosition = window.scrollY + window.innerHeight;
-    const docHeight = document.documentElement.scrollHeight;
-    const scrollThreshold = 800; // px from bottom
-    
-    if (docHeight - scrollPosition < scrollThreshold) {
-      const nextPage = currentPage.value + 1;
-      if (nextPage <= totalPages.value && !loadedPages.value.has(nextPage)) {
-        loadPageData([nextPage]);
-      }
-    }
-  }, 100);
-  
-  // Debounce utility function
-  function debounce(fn: Function, delay: number) {
-    let timeout: ReturnType<typeof setTimeout>;
-    return function(...args: any[]) {
-      if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(() => fn(...args), delay);
-    };
-  }
 
   // Computed paginated trails
   const paginatedTrails = computed(() => {
@@ -81,14 +52,20 @@ export function useTrailData() {
     Math.ceil(totalTrailCount.value / itemsPerPage.value)
   );
 
-  // Load specific pages of data
-  const loadPageData = async (pageNumbers: number[]) => {
-    isFetchingMore.value = true;
+  // Load specific pages of data with option to just prefetch (not change visible trails)
+  const loadPageData = async (pageNumbers: number[], prefetchOnly = false): Promise<boolean> => {
+    if (isFetchingMore.value && !prefetchOnly) return false;
+    
+    if (!prefetchOnly) {
+      isFetchingMore.value = true;
+    }
     
     try {
+      let addedNewItems = false;
+      
       // For each page number, fetch the data from the API
       for (const page of pageNumbers) {
-        // Skip if we've already loaded this page
+        // Skip if we've already fully loaded this page (not just prefetched)
         if (loadedPages.value.has(page)) continue;
         
         const startIndex = (page - 1) * itemsPerPage.value;
@@ -96,20 +73,28 @@ export function useTrailData() {
         // If data should already be loaded in allTrails, use that instead of API call
         if (allTrails.value.length >= startIndex + itemsPerPage.value) {
           const pageData = allTrails.value.slice(startIndex, startIndex + itemsPerPage.value);
-          // Only add the data if it's not already in visibleTrails
-          if (startIndex >= visibleTrails.value.length) {
+          
+          // Only add the data if it's not already in visibleTrails and we're not just prefetching
+          if (!prefetchOnly && startIndex >= visibleTrails.value.length) {
             visibleTrails.value = [...visibleTrails.value, ...pageData];
+            addedNewItems = true;
           }
         } else {
           // Fetch this page from the API
-          const { trails: pageTrails } = await apiService.getTrails(
+          const { trails: pageTrails, totalCount: newTotalCount } = await apiService.getTrails(
             lastAppliedFilters.value,
             { page, pageSize: itemsPerPage.value }
           );
           
-          // Add to visible trails if needed
-          if (startIndex >= visibleTrails.value.length) {
+          // Update total count if it's changed
+          if (newTotalCount !== totalTrailCount.value) {
+            totalTrailCount.value = newTotalCount;
+          }
+          
+          // Add to visible trails if not prefetching and needed
+          if (!prefetchOnly && startIndex >= visibleTrails.value.length) {
             visibleTrails.value = [...visibleTrails.value, ...pageTrails];
+            addedNewItems = true;
           }
           
           // Add to allTrails if needed (avoid duplicates)
@@ -129,28 +114,42 @@ export function useTrailData() {
           allTrails.value = newAllTrails;
         }
         
-        // Mark this page as loaded
-        loadedPages.value.add(page);
+        if (!prefetchOnly) {
+          // Mark this page as fully loaded
+          loadedPages.value.add(page);
+        }
       }
+      
+      // Return whether we added new items to visible trails
+      return addedNewItems;
     } catch (err) {
       console.error('Error loading page data:', err);
+      throw err;
     } finally {
-      isFetchingMore.value = false;
+      if (!prefetchOnly) {
+        isFetchingMore.value = false;
+      }
     }
   };
 
   // Fetch trails with optional filters and options
-  const fetchTrails = async (filters?: TrailFilters, options?: { loadAll?: boolean }): Promise<Trail[]> => {
+  const fetchTrails = async (filters?: TrailFilters, options?: { 
+    loadAll?: boolean,
+    largePageSize?: boolean,
+    bypassPagination?: boolean
+  }): Promise<Trail[]> => {
     loading.value = true;
     error.value = null;
     lastAppliedFilters.value = filters;
     
     try {
-      // Prepare options for API call
+      // Prepare options for API call with enhanced loading capabilities
       const apiOptions = { 
         page: 1, 
         pageSize: itemsPerPage.value, 
-        loadAll: options?.loadAll || false 
+        loadAll: options?.loadAll || false,
+        largePageSize: options?.largePageSize || false,
+        bypassPagination: options?.bypassPagination || false
       };
       
       // Fetch trails from API with appropriate options
@@ -280,6 +279,8 @@ export function useTrailData() {
     prefetchAmount,
     loadPageData,
     totalTrailCount,
+    loadedPages,
+    prefetchedPages,
     
     // Data fetching
     fetchTrails,

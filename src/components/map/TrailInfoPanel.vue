@@ -20,6 +20,12 @@
     </div>
     
     <div class="p-4 space-y-3 card-body">
+      <!-- Trail Image -->
+      <div 
+        class="w-full h-32 bg-cover bg-center rounded-lg mb-3"
+        :style="{ backgroundImage: `url(${trailImageUrl})` }"
+      ></div>
+      
       <div class="grid grid-cols-2 gap-2 trail-stats">
         <div class="flex flex-col stat-box p-2">
           <span class="text-xs text-text-muted stat-label">Length</span>
@@ -82,10 +88,11 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { defineProps, defineEmits, computed } from 'vue';
 import type { Trail } from '@/types/trail';
 import { useAuth } from '@/composables/useAuth';
 import TrailActions from '@/components/trails/TrailActions.vue';
+import { getTrailImageUrl, getDefaultTrailImage } from '@/utils/imageUtils';
 
 const props = defineProps<{
   trail: Trail | null;
@@ -97,6 +104,13 @@ defineEmits<{
 }>();
 
 const { isLoggedIn } = useAuth();
+
+// Generate trail image URL using Lorem Picsum
+const trailImageUrl = computed(() => {
+  if (!props.trail) return getDefaultTrailImage(400, 200);
+  
+  return props.trail.imageUrl || getTrailImageUrl(props.trail.id, 400, 200);
+});
 
 // Event handlers for trail actions
 const onWishlistUpdated = (inWishlist: boolean) => {

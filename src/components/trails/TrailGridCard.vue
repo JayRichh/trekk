@@ -5,7 +5,7 @@
     @click="$emit('click')"
   >
     <!-- Trail image with difficulty badge -->
-    <div class="h-[180px] bg-cover bg-center relative" :style="{ backgroundImage: `url(${trail.imageUrl || 'https://images.unsplash.com/photo-1551632811-561732d1e306'})` }">
+    <div class="h-[180px] bg-cover bg-center relative" :style="{ backgroundImage: `url(${trailImageUrl})` }">
       <div class="absolute top-2 right-2 badge"
           :class="{
             'badge-easy': trail.difficulty === 'easy',
@@ -102,6 +102,7 @@ import { computed } from 'vue';
 import type { Trail } from '@/types/trail';
 import TrailActions from './TrailActions.vue';
 import { useAuth } from '@/composables/useAuth';
+import { getTrailImageUrl, getDefaultTrailImage } from '@/utils/imageUtils';
 
 const props = defineProps<{
   trail: Trail;
@@ -109,6 +110,18 @@ const props = defineProps<{
 }>();
 
 const { isLoggedIn } = useAuth();
+
+// Generate image URL using Lorem Picsum
+const trailImageUrl = computed(() => {
+  if (props.trail.imageUrl) {
+    // Use existing URL if available
+    return props.trail.imageUrl;
+  }
+  
+  return props.trail.id 
+    ? getTrailImageUrl(props.trail.id, 400, 180) 
+    : getDefaultTrailImage(400, 180);
+});
 
 defineEmits<{
   (e: 'click'): void;

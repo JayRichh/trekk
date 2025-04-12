@@ -18,6 +18,16 @@
       </div>
       
       <div class="mb-8">
+        <!-- Hero image section -->
+        <div class="mb-6 relative">
+          <div class="h-60 md:h-80 lg:h-96 rounded-lg overflow-hidden">
+            <div 
+              class="w-full h-full bg-cover bg-center"
+              :style="{ backgroundImage: `url(${trailImageUrl})` }"
+            ></div>
+          </div>
+        </div>
+        
         <div>
           <h1 class="text-4xl font-bold text-primary mb-2">{{ trail.name }}</h1>
           <div class="flex items-center gap-4 mb-3">
@@ -282,7 +292,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import LoadingSpinner from '../components/shared/LoadingSpinner.vue';
 import RatingList from '../components/ratings/RatingList.vue';
 import TrailActions from '../components/trails/TrailActions.vue';
@@ -293,6 +303,7 @@ import type { Trail } from '../types/trail';
 import { apiService } from '../services/apiService';
 import { useAuth } from '../composables/useAuth';
 import { getMapboxToken } from '../lib/mapTokenHelper';
+import { getTrailImageUrl, getDefaultTrailImage } from '../utils/imageUtils';
 
 const route = useRoute();
 const router = useRouter();
@@ -323,6 +334,13 @@ function updateContentProgress(progress: number, text: string): void {
 
 // Authentication state
 const { isLoggedIn } = useAuth();
+
+// Generate trail image URL using Lorem Picsum
+const trailImageUrl = computed(() => {
+  if (!trail.value) return getDefaultTrailImage(1200, 600);
+  
+  return trail.value.imageUrl || getTrailImageUrl(trail.value.id, 1200, 600, { blur: 1 });
+});
 
 // Review form
 const showReviewModal = ref(false);

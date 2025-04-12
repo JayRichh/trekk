@@ -273,10 +273,11 @@ function filterTrails(trails: Trail[], filters?: TrailFilters): Trail[] {
     return true;
   });
   
-  // Then apply the maxTrails limit if specified
-  if (filters.maxTrails && filters.maxTrails > 0) {
-    filteredTrails = filteredTrails.slice(0, filters.maxTrails);
-  }
+  // REMOVED: maxTrails limit to allow all trails to be returned
+  // Original code:
+  // if (filters.maxTrails && filters.maxTrails > 0) {
+  //   filteredTrails = filteredTrails.slice(0, filters.maxTrails);
+  // }
   
   return filteredTrails;
 }
@@ -569,7 +570,13 @@ export const apiService = {
   },
   
   // Get all trails with optional filtering and pagination
-  async getTrails(filters?: TrailFilters, options?: { page?: number, pageSize?: number, loadAll?: boolean }): Promise<{ trails: Trail[], totalCount: number }> {
+  async getTrails(filters?: TrailFilters, options?: { 
+    page?: number, 
+    pageSize?: number, 
+    loadAll?: boolean, 
+    largePageSize?: boolean,
+    bypassPagination?: boolean
+  }): Promise<{ trails: Trail[], totalCount: number }> {
     try {
       const defaultOptions = { page: 1, pageSize: 20, loadAll: false };
       const { page, pageSize, loadAll } = { ...defaultOptions, ...options };
@@ -639,12 +646,17 @@ export const apiService = {
       // Calculate total count (used for pagination UI)
       const totalCount = filteredTrails.length;
       
-      // Get the requested page
-      let pageTrails = filteredTrails;
-      if (!loadAll) {
-        const startIdx = (page - 1) * pageSize;
-        pageTrails = filteredTrails.slice(startIdx, startIdx + pageSize);
-      }
+  // Get the requested page - check for special flag to bypass pagination
+  let pageTrails = filteredTrails;
+  if (!loadAll && !options?.bypassPagination) {
+    // Use a much larger pageSize when requested
+    const effectivePageSize = options?.largePageSize ? 500 : pageSize;
+    const startIdx = (page - 1) * effectivePageSize;
+    pageTrails = filteredTrails.slice(startIdx, startIdx + effectivePageSize);
+    console.log(`Pagination: Page ${page}, showing ${startIdx} to ${startIdx + effectivePageSize} of ${filteredTrails.length} trails`);
+  } else {
+    console.log(`Returning all ${filteredTrails.length} trails without pagination`);
+  }
       
       // Get ratings for trails on this page
       if (pageTrails.length > 0) {

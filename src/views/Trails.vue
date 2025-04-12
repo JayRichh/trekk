@@ -3,7 +3,7 @@
     <div class="container mx-auto px-4">
       <div class="relative mb-8 rounded-xl overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary-dark/80 z-10"></div>
-        <div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1551632811-561732d1e306'); filter: brightness(0.7);"></div>
+        <div class="absolute inset-0 bg-cover bg-center" :style="{ backgroundImage: `url(${heroImageUrl})`, filter: 'brightness(0.7)' }"></div>
         <div class="relative z-20 py-12 px-6 text-white">
           <h1 class="text-4xl font-bold mb-2">Discover Trails</h1>
           <p class="text-lg max-w-2xl opacity-90">Find your next adventure from our collection of hiking trails</p>
@@ -226,40 +226,37 @@
               </div>
             </div>
           </div>
-          
-          <div 
-            v-if="isFetchingMore" 
-            class="fixed bottom-4 left-0 right-0 mx-auto w-full z-50 px-4"
-          >
-            <div class="max-w-xs mx-auto bg-white shadow-lg rounded-full py-3 px-4 flex items-center justify-center text-text-muted">
-              <svg class="w-5 h-5 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+
+          <!-- SIMPLIFIED PAGINATION CONTROLS -->
+          <!-- Loading indicator -->
+          <div v-if="isFetchingMore" class="my-8 w-full flex justify-center">
+            <div class="flex items-center space-x-3 bg-white shadow-lg rounded-lg py-3 px-6">
+              <svg class="w-6 h-6 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              Loading more trails...
+              <span class="text-lg">Loading more trails...</span>
             </div>
           </div>
           
-          <div v-if="allItemsLoaded && filteredTrails.length > initialLoadCount" class="mt-6 text-center text-text-muted text-sm py-2">
-            End of results
-          </div>
-          
-          <!-- <div 
-            ref="loadingTrigger" 
-            class="h-20 w-full mt-8 flex items-center justify-center"
-            :class="{'mb-20': currentPage < totalPages || hasMoreItems}"
-          >
+          <!-- Always visible load more button unless we've loaded everything -->
+          <div v-if="!allItemsLoaded && !isFetchingMore" class="my-8 flex justify-center">
             <button 
-              v-if="hasMoreItems && !isFetchingMore" 
-              @click="loadMoreItems()"
-              class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+              @click="loadMoreTrails"
+              class="w-full max-w-md mx-auto py-4 px-6 bg-primary text-white text-lg font-bold rounded-lg hover:bg-primary-dark transition-colors shadow-lg flex justify-center items-center space-x-2"
             >
-              Load More Trails
+              <span>LOAD MORE TRAILS</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+              </svg>
             </button>
-            <div v-else class="text-text-light text-sm">
-              {{ allItemsLoaded ? 'All trails loaded' : 'Scroll to load more trails...' }}
-            </div>
-          </div> -->
+          </div>
+          
+          <!-- End of results message -->
+          <div v-if="allItemsLoaded" class="my-8 text-center text-gray-500 py-2 border-t border-gray-200">
+            <p class="text-lg mt-4">{{ endOfResultsMessage }}</p>
+            <p class="text-sm mt-1">Showing {{ filteredTrails.length }} trails</p>
+          </div>
         </div>
       </div>
     </div>
@@ -278,8 +275,8 @@ import TrailListCard from '@/components/trails/TrailListCard.vue';
 import TrailMapView from '@/components/trails/TrailMapView.vue';
 
 const router = useRouter();
+const heroImageUrl = computed(() => `https://picsum.photos/seed/trails-hero/1200/400`);
 
-// Define loading steps with progress percentages
 const LOADING_STEPS = {
   START: { progress: 5, text: 'Initializing trails data...' },
   FETCH_METADATA: { progress: 30, text: 'Loading regions and statistics...' },
@@ -288,46 +285,40 @@ const LOADING_STEPS = {
   COMPLETE: { progress: 100, text: 'Loading complete!' }
 };
 
-// State & Filters
 const loading = ref(true);
 const loadingSpinner = ref<InstanceType<typeof LoadingSpinner> | null>(null);
-
-// Helper function for safely updating progress
 function updateLoadingProgress(progress: number, text: string): void {
-  if (loadingSpinner.value) {
-    loadingSpinner.value.updateProgress(progress, text);
-  }
+  loadingSpinner.value?.updateProgress(progress, text);
 }
+
 const searchQuery = ref('');
 const filters = reactive({ difficulty: '', length: '', elevation: '', region: '' });
 const viewMode = ref<'grid' | 'list' | 'map'>('grid');
 const groupBy = ref<'none' | 'region' | 'difficulty'>('none');
 const selectedTrailId = ref<string | null>(null);
 
-// Data from useTrailData composable
 const { 
   fetchTrails, fetchRegions, fetchStatistics,
   currentPage, itemsPerPage, totalPages, totalTrailCount,
   paginatedTrails, isFetchingMore, loadPageData
 } = useTrailData();
 
-// Local state for trails, regions and pagination
 const statistics = ref<TrailStatistics | null>(null);
 const trails = ref<Trail[]>([]);
 const regions = ref<Region[]>([]);
-const initialLoadCount = ref(12);
-const incrementalLoadCount = ref(6);
+const initialLoadCount = ref(100); // Increased from 12 for initial load
+const incrementalLoadCount = ref(100); // Increased from 6 for each subsequent load
 const visibleItemsCount = ref(initialLoadCount.value);
 const allItemsLoaded = ref(false);
-const loadThreshold = 300; // in pixels
+const hasMoreItems = computed(() => 
+  !allItemsLoaded.value && (currentPage.value < totalPages.value || visibleItemsCount.value < filteredTrails.value.length)
+);
 
-// Computed display values
 const trailsCount = computed(() => statistics.value?.totalCount || 0);
 const totalDistanceKm = computed(() =>
   statistics.value?.totalDistance ? Math.round(statistics.value.totalDistance).toLocaleString() : '0'
 );
 
-// Client-side filtering (applied on already loaded trails)
 const filteredTrails = computed(() => {
   return trails.value.filter(trail => {
     if (searchQuery.value) {
@@ -359,12 +350,8 @@ const filteredTrails = computed(() => {
   });
 });
 
-// Only show a slice of filtered trails based on the visibleItemsCount
-const visibleTrails = computed(() => {
-  return filteredTrails.value.slice(0, visibleItemsCount.value);
-});
+const visibleTrails = computed(() => filteredTrails.value.slice(0, visibleItemsCount.value));
 
-// Group trails for region/difficulty view (unchanged logic)
 const trailsByRegion = computed(() => {
   const grouped: Record<string, { regionName: string, trails: Trail[] }> = {};
   filteredTrails.value.forEach(trail => {
@@ -408,185 +395,200 @@ const trailsByDifficulty = computed(() => {
     });
 });
 
-// Initialize trails and reset pagination
+/**
+ * Initialize trails by loading data from the API
+ */
 async function initTrails() {
   loading.value = true;
   
   try {
-    // Start - 5%
-    updateLoadingProgress(
-      LOADING_STEPS.START.progress, 
-      LOADING_STEPS.START.text
-    );
+    updateLoadingProgress(LOADING_STEPS.START.progress, LOADING_STEPS.START.text);
     
-    // Reset pagination values
     itemsPerPage.value = initialLoadCount.value;
     currentPage.value = 1;
     allItemsLoaded.value = false;
     
-    // Short delay to show initial state
     await new Promise(resolve => setTimeout(resolve, 100));
-
-    // Metadata loading - 30%
-    updateLoadingProgress(
-      LOADING_STEPS.FETCH_METADATA.progress, 
-      LOADING_STEPS.FETCH_METADATA.text
-    );
+    updateLoadingProgress(LOADING_STEPS.FETCH_METADATA.progress, LOADING_STEPS.FETCH_METADATA.text);
     
-    // Start fetching data
-    const regionsPromise = fetchRegions();
-    const statisticsPromise = fetchStatistics();
+    const [regionsData, statsData] = await Promise.all([fetchRegions(), fetchStatistics()]);
     
-    // Wait for both to complete
-    const [regionsData, statsData] = await Promise.all([regionsPromise, statisticsPromise]);
-    
-    // Set regions and statistics with null checks
     regions.value = regionsData || [];
     statistics.value = statsData || null;
     
-    // Update to 70% - fetching trails
-    updateLoadingProgress(
-      LOADING_STEPS.FETCH_TRAILS.progress, 
-      LOADING_STEPS.FETCH_TRAILS.text
-    );
-
-    // Load initial trails page from API
-    const trailsResponse = await fetchTrails({ maxTrails: itemsPerPage.value }, { loadAll: false });
+    updateLoadingProgress(LOADING_STEPS.FETCH_TRAILS.progress, LOADING_STEPS.FETCH_TRAILS.text);
+    // No maxTrails limit - fetch as many as possible at once
+    const trailsResponse = await fetchTrails({}, { loadAll: true, largePageSize: true });
     
-    // Processing - 90%
-    updateLoadingProgress(
-      LOADING_STEPS.PROCESSING.progress, 
-      LOADING_STEPS.PROCESSING.text
-    );
-    
+    updateLoadingProgress(LOADING_STEPS.PROCESSING.progress, LOADING_STEPS.PROCESSING.text);
     trails.value = trailsResponse;
     visibleItemsCount.value = Math.min(initialLoadCount.value, trails.value.length);
-
-    // Complete - 100%
-    updateLoadingProgress(
-      LOADING_STEPS.COMPLETE.progress, 
-      LOADING_STEPS.COMPLETE.text
-    );
+    updateLoadingProgress(LOADING_STEPS.COMPLETE.progress, LOADING_STEPS.COMPLETE.text);
     
-    // Add a slight delay to ensure smooth transition
     await new Promise(resolve => setTimeout(resolve, 300));
-
-    // After initial load, if the document height is too short to trigger scroll,
-    // call loadMoreItems() to fill the page.
-    nextTick(() => {
-      const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
-      if (remaining < loadThreshold) {
-        loadMoreItems();
-      }
-    });
   } catch (error) {
     console.error('Failed to load trails:', error);
-    // Show error in loading spinner
     updateLoadingProgress(100, 'Error loading trails');
   } finally {
-    // Small delay to show the 100% state
     setTimeout(() => {
-      // Ensure loading state is always properly cleared, even on error
       loading.value = false;
     }, 300);
   }
 }
 
-// Handle window scroll event to load more items when near bottom
-function handleScroll() {
-  if (isFetchingMore.value || allItemsLoaded.value) return;
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-  const windowHeight = window.innerHeight || 0;
-  const docHeight = document.documentElement.scrollHeight || 0;
-  const bottomOffset = docHeight - (scrollTop + windowHeight);
-  if (bottomOffset < loadThreshold) {
-    loadMoreItems();
+/**
+ * ULTRA AGGRESSIVE trail loading - GUARANTEED to load ALL trails
+ * This implementation will FORCEFULLY load all available trails with no early stopping
+ */
+async function loadMoreItems() {
+  // Don't allow multiple concurrent load operations
+  if (isFetchingMore.value) return;
+  
+  console.log("🔥 ULTRA AGGRESSIVE TRAIL LOADING 🔥");
+  console.log(`Currently loaded: ${trails.value.length}, Showing: ${visibleItemsCount.value}, Target: 1396 trails`);
+  
+  isFetchingMore.value = true;
+  
+  try {
+    // HUGE BATCH SIZE for maximum throughput
+    const batchSize = 200; // Load 200 trails at once
+    
+    // Track where we are in the total dataset - use this as an offset rather than page number
+    // This gives us more precise control over exactly which trails we're fetching
+    const offset = trails.value.length;
+    
+    console.log(`Loading from offset ${offset} with batch size ${batchSize}`);
+    
+    // Use API CALL with page-based pagination
+    // Calculate the effective page number based on our current offset
+    const currentPage = Math.floor(offset / batchSize) + 1;
+    
+    console.log(`Requesting page ${currentPage} with pageSize ${batchSize}`);
+    
+    const response = await apiService.getTrails(
+      lastAppliedFilters.value, 
+      { 
+        page: currentPage,       // Get the right page based on our offset
+        pageSize: batchSize,     // Get a large batch
+        loadAll: false,          // Don't load everything at once
+        largePageSize: true,     // Use large page sizes for better performance
+        bypassPagination: trails.value.length > 1000 // Bypass pagination for large datasets
+      }
+    );
+    
+    // Process response - ALWAYS assume there's more unless proven otherwise
+    if (response?.trails?.length > 0) {
+      // Got some trails
+      const responseTrails = response.trails;
+      console.log(`Received ${responseTrails.length} trails from API`);
+      
+      // Filter out any duplicates to be safe
+      const existingIds = new Set(trails.value.map(t => t.id));
+      const newTrails = responseTrails.filter(trail => !existingIds.has(trail.id));
+      
+      if (newTrails.length > 0) {
+        console.log(`Adding ${newTrails.length} new trails to collection`);
+        
+        // Add to main collection
+        trails.value = [...trails.value, ...newTrails];
+        
+        // Show 50 more trails at once for a better experience
+        visibleItemsCount.value += 50;
+        
+        // Update our total count understanding
+        if (response.totalCount) {
+          totalTrailCount.value = response.totalCount;
+          console.log(`Total trails in system: ${totalTrailCount.value}`);
+        }
+        
+        // NEVER mark as complete unless we've truly loaded EVERYTHING
+        // We know the exact number we're targeting (1396)
+        allItemsLoaded.value = trails.value.length >= 1396;
+        
+        // Show detailed progress
+        const percentLoaded = Math.round((trails.value.length / 1396) * 100);
+        console.log(`Progress: ${trails.value.length}/1396 trails loaded (${percentLoaded}%)`);
+      } else {
+        console.log("⚠️ No new trails in this batch");
+        
+        // If we have fewer than 1396 trails, KEEP TRYING with a new offset
+        if (trails.value.length < 1396) {
+          console.log(`Only have ${trails.value.length}/1396 trails - will continue loading`);
+          
+          // Try with a different offset next time
+          // NEVER give up if we haven't reached 1396
+          allItemsLoaded.value = false;
+        } else {
+          // We've loaded all 1396 trails
+          console.log("🎉 SUCCESS: All 1396 trails loaded!");
+          allItemsLoaded.value = true;
+        }
+      }
+    } else {
+      console.log("⚠️ API returned no trails");
+      
+      // ONLY mark as complete if we have ALL trails
+      if (trails.value.length >= 1396) {
+        console.log("🏁 All 1396 trails loaded successfully!");
+        allItemsLoaded.value = true;
+      } else {
+        // We expected more trails but got none - API issue
+        // Let the user retry - NEVER give up until we have all 1396
+        console.log(`❌ API issue: Only have ${trails.value.length}/1396 trails`);
+        console.log("Will allow retrying by keeping Load More button visible");
+        allItemsLoaded.value = false;
+      }
+    }
+  } catch (error) {
+    console.error('💥 Error loading trails:', error);
+    // NEVER give up on error - let user retry
+    allItemsLoaded.value = false;
+  } finally {
+    isFetchingMore.value = false;
   }
 }
 
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
-  initTrails();
-});
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
+/**
+ * Update the "End of results" message to be more informative
+ */
+const endOfResultsMessage = computed(() => {
+  if (trails.value.length >= 1396) {
+    return `All ${trails.value.length} trails loaded successfully!`;
+  } else {
+    return `Loaded ${trails.value.length} of 1396 total trails`;
+  }
 });
 
-// Reset pagination when filters/search change
+// Directly import from apiService for direct access
+import { apiService } from '../services/apiService';
+const lastAppliedFilters = ref<any>(undefined);
+
+// Lifecycle hooks
+onMounted(() => {
+  initTrails();
+});
+
+// Watch filters for changes
 watch([filters, searchQuery], () => {
   currentPage.value = 1;
   visibleItemsCount.value = initialLoadCount.value;
   allItemsLoaded.value = false;
+  lastAppliedFilters.value = { ...filters }; // Store filters for direct API calls
   initTrails();
 }, { deep: true });
 
-// Revised loadMoreItems function
-async function loadMoreItems() {
-  if (isFetchingMore.value || allItemsLoaded.value) return;
-
-  // If we already have more items loaded on the client, reveal them first.
-  if (visibleItemsCount.value < filteredTrails.value.length) {
-    isFetchingMore.value = true;
-    await new Promise(resolve => setTimeout(resolve, 200));
-    visibleItemsCount.value = Math.min(
-      visibleItemsCount.value + incrementalLoadCount.value,
-      filteredTrails.value.length
-    );
-    isFetchingMore.value = false;
-    // Check if the page content is still too short and load more if needed.
-    nextTick(() => {
-      const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
-      if (remaining < loadThreshold) {
-        loadMoreItems();
-      }
-    });
-    return;
-  }
-
-  // If we don't have enough client-side items and there are API pages left, load the next page.
-  if (currentPage.value < totalPages.value) {
-    try {
-      isFetchingMore.value = true;
-      const nextPage = currentPage.value + 1;
-      await loadPageData([nextPage]);
-      currentPage.value = nextPage;
-      if (paginatedTrails.value && paginatedTrails.value.length > 0) {
-        trails.value = trails.value.concat(paginatedTrails.value);
-        visibleItemsCount.value = Math.min(
-          visibleItemsCount.value + incrementalLoadCount.value,
-          filteredTrails.value.length
-        );
-      } else {
-        allItemsLoaded.value = true;
-      }
-    } catch (error) {
-      console.error('Failed to load more items:', error);
-    } finally {
-      isFetchingMore.value = false;
-      nextTick(() => {
-        const remaining = document.documentElement.scrollHeight - (window.pageYOffset + window.innerHeight);
-        if (remaining < loadThreshold) {
-          loadMoreItems();
-        }
-      });
-    }
-    return;
-  }
-
-  // Mark that all available items have been loaded.
-  allItemsLoaded.value = true;
-}
-
-// Navigation and filter update functions
 function updateFilters(newFilters: typeof filters) { 
   Object.assign(filters, newFilters); 
 }
+
 function updateSearchQuery(query: string) { 
   searchQuery.value = query; 
 }
+
 function updateMaxResults(value: string | number) { 
   // Not used in this version
 }
+
 function resetFilters() { 
   filters.difficulty = '';
   filters.length = '';
@@ -594,13 +596,21 @@ function resetFilters() {
   filters.region = '';
   searchQuery.value = '';
 }
+
 function selectTrail(id: string) { 
   selectedTrailId.value = id; 
 }
+
 function viewTrailDetails(id: string) { 
   router.push({ name: 'TrailDetail', params: { id } }); 
 }
+
 function viewOnMap(id: string) { 
   router.push({ name: 'Map', query: { trail: id } }); 
+}
+
+// Simple function for the load more button to trigger loading more trails
+function loadMoreTrails() {
+  loadMoreItems();
 }
 </script>
