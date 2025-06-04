@@ -111,14 +111,13 @@ const props = defineProps<{
 
 const { isLoggedIn } = useAuth();
 
-// Generate image URL using Lorem Picsum
+// Generate trail image URL following consistent pattern across app:
+// IMPORTANT: Always generate a unique image URL for each trail based on ID
+// rather than using the default URL from the API data
 const trailImageUrl = computed(() => {
-  if (props.trail.imageUrl) {
-    // Use existing URL if available
-    return props.trail.imageUrl;
-  }
-  
-  return props.trail.id 
+  // Always use our utility function to ensure unique, consistent images
+  // Ensure trail.id exists and is not null/undefined
+  return props.trail && props.trail.id 
     ? getTrailImageUrl(props.trail.id, 400, 180) 
     : getDefaultTrailImage(400, 180);
 });

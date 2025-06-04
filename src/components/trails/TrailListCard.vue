@@ -120,9 +120,15 @@ defineEmits<{
   (e: 'view-on-map'): void;
 }>();
 
-// Generate trail image URL using Lorem Picsum
+// Generate trail image URL following consistent pattern across app:
+// IMPORTANT: Always generate a unique image URL for each trail based on ID
+// rather than using the default URL from the API data
 const trailImageUrl = computed(() => {
-  return props.trail.imageUrl || getTrailImageUrl(props.trail.id, 120, 120);
+  // Always use our utility function to ensure unique, consistent images
+  // Ensure both props.trail and props.trail.id exist
+  return props.trail && props.trail.id 
+    ? getTrailImageUrl(props.trail.id, 120, 120)
+    : getDefaultTrailImage(120, 120);
 });
 
 // Check if trail has ratings

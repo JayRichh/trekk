@@ -85,7 +85,7 @@ export const apiService = {
             
             const region = regionMap.get(regionName);
             if (region && region.id) {
-              const regionId = region.id as string;
+              const regionId = region.id!;
               if (!regionCounts[regionId]) {
                 regionCounts[regionId] = { 
                   id: regionId, 
@@ -171,7 +171,7 @@ export const apiService = {
           
           const region = mockRegions.find(r => r.name === regionName);
           if (region && region.id) {
-            const regionId = region.id as string;
+            const regionId = region.id!;
             if (!regionCounts[regionId]) {
               regionCounts[regionId] = { 
                 id: regionId, 
@@ -235,8 +235,6 @@ export const apiService = {
       const defaultOptions = { page: 0, pageSize: 20 };
       const { page, pageSize } = { ...defaultOptions, ...options };
       
-      console.log(`Fetching trails with page=${page}, pageSize=${pageSize}`);
-      
       // Try to get trails from Supabase
       const { data, count, error } = await getTrailsFromSupabase({
         page,
@@ -245,7 +243,6 @@ export const apiService = {
       });
       
       if (!error && data && data.length > 0) {
-        console.log(`Got ${data.length} trails from Supabase, total count: ${count}`);
         const trailIds = data.map(trail => trail.id);
         await attachRatingsToTrails(data, trailIds);
         
@@ -260,21 +257,7 @@ export const apiService = {
       // Fallback to DOC API if Supabase query fails or returns no data
       if (isApiKeyAvailable()) {
         try {
-          // Store all trails in memory for pagination
-          let allTrails: Trail[] = [];
-          
-          // Check if we already have the trails cached
-          if (page === 0) {
-            // Only fetch all trails on the first page request
-            allTrails = await getAllTrails();
-            
-            // Sync trails to Supabase in the background for future requests
-            syncTrailsToSupabase(allTrails);
-          } else {
-            // For subsequent pages, we need to get all trails first
-            // This is inefficient but necessary since the DOC API doesn't support pagination
-            allTrails = await getAllTrails();
-          }
+          const allTrails = await getAllTrails();
           
           // Apply filters
           let filteredTrails = allTrails;
@@ -317,12 +300,13 @@ export const apiService = {
             pageTrails = filteredTrails.slice(startIdx, Math.min(startIdx + pageSize, filteredTrails.length));
           }
           
-          console.log(`Returning ${pageTrails.length} trails from DOC API, total count: ${totalCount}`);
-          
           if (pageTrails.length > 0) {
             const trailIds = pageTrails.map(trail => trail.id);
             await attachRatingsToTrails(pageTrails, trailIds);
           }
+          
+          // Sync trails to Supabase in the background
+          syncTrailsToSupabase(allTrails);
           
           return { 
             trails: pageTrails, 

@@ -227,6 +227,14 @@ async function loadInitialData() {
     // Fetch map examples (optional)
     await getMapboxExamples('terrain');
     
+    // Ensure map markers are updated after data is loaded
+    if (map && map.loaded() && map.getSource('trails')) {
+      console.log('Updating map markers after initial data load');
+      updateMapMarkers();
+    } else {
+      console.log('Map not fully loaded yet, will update markers when map is ready');
+    }
+    
     return true;
   } catch (error) {
     console.error('Error loading initial data:', error);
@@ -303,6 +311,12 @@ function initMap() {
   // On load, add terrain, sky, and initial data
   map.on('load', () => {
     setupMapLayers();
+    
+    // If trails data is already loaded, update the markers
+    if (trails.value.length > 0) {
+      console.log('Trails data already loaded, updating markers on map load');
+      updateMapMarkers();
+    }
   });
 }
 

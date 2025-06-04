@@ -32,23 +32,50 @@ export function useRatings() {
     
     loading.value = true;
     error.value = null;
+    console.log(`[DEBUG] fetchUserRatings: Using mock data for debugging`);
     
     try {
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .select('*')
-        .eq('user_id', user.value.id)
-        .order('updated_at', { ascending: false });
-        
-      if (err) throw err;
+      // Return mock ratings data
+      const mockRatingsData: Rating[] = [
+        {
+          id: 'mock-rating-1',
+          user_id: user.value?.id || 'mock-user',
+          trail_id: 'trail-1',
+          rating: 4,
+          comment: 'Beautiful trail with amazing views. Moderately challenging but well worth it.',
+          tips: 'Bring plenty of water and start early to avoid crowds.',
+          image_url: '/images/fallback/trail-default.jpg',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          trail: {
+            name: 'Alpine Lake Loop',
+            imageUrl: '/images/fallback/trail-default.jpg'
+          }
+        },
+        {
+          id: 'mock-rating-2',
+          user_id: user.value?.id || 'mock-user',
+          trail_id: 'trail-2',
+          rating: 5,
+          comment: 'One of the best hikes I\'ve ever done. The summit view is incredible!',
+          tips: 'The last mile is steep - trekking poles recommended.',
+          image_url: null,
+          created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+          updated_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          trail: {
+            name: 'Mountain Summit Trail',
+            imageUrl: '/images/fallback/trail-default.jpg'
+          }
+        }
+      ];
       
-      ratings.value = data || [];
+      console.log(`[DEBUG] fetchUserRatings: Using ${mockRatingsData.length} mock rating items`);
+      ratings.value = mockRatingsData;
       
-      // Load trail info for each rating
-      await loadTrailDetails();
+      console.log(`[DEBUG] fetchUserRatings: Mock rating data ready`);
     } catch (err: any) {
-      console.error('Error fetching ratings:', err);
-      error.value = err.message || 'Failed to fetch ratings';
+      console.error('Error setting mock ratings:', err);
+      error.value = err.message || 'Failed to set mock ratings';
     } finally {
       loading.value = false;
     }
@@ -94,34 +121,20 @@ export function useRatings() {
     }
   };
   
-  // Upload an image for a rating
+  // Upload an image for a rating (mock version)
   const uploadRatingImage = async (file: File) => {
     if (!user.value) return { success: false, error: 'User not authenticated' };
     
     try {
-      // Generate a unique filename
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const filePath = `${user.value.id}/${fileName}`;
+      console.log(`[DEBUG] Mock client: Would upload image: ${file.name} (${file.size} bytes)`);
       
-      // Upload to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from('rating-images')
-        .upload(filePath, file);
-        
-      if (uploadError) throw uploadError;
-      
-      // Get public URL for the image
-      const { data: { publicUrl } } = supabase.storage
-        .from('rating-images')
-        .getPublicUrl(filePath);
-      
+      // Return a mock URL
       return {
         success: true,
-        url: publicUrl
+        url: '/images/fallback/trail-default.jpg'
       };
     } catch (err: any) {
-      console.error('Error uploading image:', err);
+      console.error('Error with mock image upload:', err);
       return {
         success: false,
         error: err.message || 'Failed to upload image'
@@ -143,30 +156,38 @@ export function useRatings() {
     error.value = null;
     
     try {
-      const newRating = {
+      console.log(`[DEBUG] Mock client: Would create rating ${ratingData.rating} stars for trail ${ratingData.trail_id}`);
+      
+      // Create a mock rating with generated ID
+      const mockRating: Rating = {
+        id: `mock-rating-${Date.now()}`,
         user_id: user.value.id,
         trail_id: ratingData.trail_id,
         rating: ratingData.rating,
-        comment: ratingData.comment || '',
-        tips: ratingData.tips || '',
-        image_url: ratingData.image_url || ''
+        comment: ratingData.comment || null,
+        tips: ratingData.tips || null,
+        image_url: ratingData.image_url || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
       
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .insert(newRating)
-        .select()
-        .single();
-        
-      if (err) throw err;
-      
       // Add to local state
-      if (data) {
-        ratings.value = [data, ...ratings.value];
-        await loadTrailDetails();
+      ratings.value = [mockRating, ...ratings.value];
+      
+      // Get trail details
+      try {
+        const trail = await apiService.getTrailById(ratingData.trail_id);
+        if (trail) {
+          mockRating.trail = {
+            name: trail.name,
+            imageUrl: trail.imageUrl
+          };
+        }
+      } catch (error) {
+        console.error(`Error fetching trail details for ${ratingData.trail_id}:`, error);
       }
       
-      return { success: true, data };
+      return { success: true, data: mockRating };
     } catch (err: any) {
       console.error('Error creating rating:', err);
       error.value = err.message || 'Failed to create rating';
@@ -184,25 +205,29 @@ export function useRatings() {
     error.value = null;
     
     try {
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.value.id) // Ensure user can only update their own ratings
-        .select()
-        .single();
-        
-      if (err) throw err;
+      console.log(`[DEBUG] Mock client: Would update rating ${id} with:`, updates);
       
       // Update local state
-      if (data) {
-        const index = ratings.value.findIndex(r => r.id === id);
-        if (index !== -1) {
-          ratings.value[index] = { ...ratings.value[index], ...data };
-        }
+      const index = ratings.value.findIndex(r => r.id === id);
+      if (index === -1) {
+        throw new Error('Rating not found');
       }
       
-      return { success: true, data };
+      const currentRating = ratings.value[index];
+      if (!currentRating) {
+        throw new Error('Rating not found');
+      }
+      
+      // Create updated rating object
+      const updatedRating: Rating = {
+        ...currentRating,
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+      
+      ratings.value[index] = updatedRating;
+      
+      return { success: true, data: updatedRating };
     } catch (err: any) {
       console.error('Error updating rating:', err);
       error.value = err.message || 'Failed to update rating';
@@ -220,13 +245,7 @@ export function useRatings() {
     error.value = null;
     
     try {
-      const { error: err } = await supabase
-        .from('ratings')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.value.id); // Ensure user can only delete their own ratings
-        
-      if (err) throw err;
+      console.log(`[DEBUG] Mock client: Would delete rating ${id}`);
       
       // Update local state
       ratings.value = ratings.value.filter(r => r.id !== id);
@@ -247,18 +266,68 @@ export function useRatings() {
     error.value = null;
     
     try {
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .select('*, profiles(display_name, avatar_url)')
-        .eq('trail_id', trailId)
-        .order('created_at', { ascending: false });
-        
-      if (err) throw err;
+      console.log(`[DEBUG] Mock client: Would fetch ratings for trail ${trailId}`);
       
-      return data || [];
+      // Define the type for trail ratings to ensure consistency
+      type TrailRatingResponse = {
+        id: string;
+        user_id: string;
+        trail_id: string;
+        rating: number;
+        comment: string | null;
+        tips: string | null;
+        image_url: string | null;
+        created_at: string;
+        profiles: { display_name: string; avatar_url: string | null };
+      };
+      
+      // Create mock trail ratings data
+      const mockTrailRatings: TrailRatingResponse[] = [
+        {
+          id: 'mock-trail-rating-1',
+          user_id: 'other-user-1',
+          trail_id: trailId,
+          rating: 5,
+          comment: 'Absolutely stunning trail! The views are breathtaking.',
+          tips: 'Go early to avoid crowds.',
+          image_url: '/images/fallback/trail-default.jpg',
+          created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+          profiles: { display_name: 'Alex Hiker', avatar_url: null }
+        },
+        {
+          id: 'mock-trail-rating-2',
+          user_id: 'other-user-2',
+          trail_id: trailId,
+          rating: 4,
+          comment: 'Great trail, well maintained. A bit crowded on weekends.',
+          tips: null,
+          image_url: null,
+          created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          profiles: { display_name: 'Trail Enthusiast', avatar_url: null }
+        }
+      ];
+      
+      // If user has rated this trail, include their rating
+      const userRating = ratings.value.find(r => r.trail_id === trailId);
+      if (userRating) {
+        // Convert user rating to the correct response format
+        mockTrailRatings.unshift({
+          id: userRating.id,
+          user_id: userRating.user_id,
+          trail_id: userRating.trail_id,
+          rating: userRating.rating,
+          comment: userRating.comment || '',
+          tips: userRating.tips || null,
+          image_url: userRating.image_url,
+          created_at: userRating.created_at,
+          profiles: { display_name: 'You', avatar_url: null }
+        });
+      }
+      
+      return mockTrailRatings;
     } catch (err: any) {
-      console.error(`Error fetching ratings for trail ${trailId}:`, err);
-      error.value = err.message || `Failed to fetch ratings for trail ${trailId}`;
+      console.error(`Error creating mock ratings for trail ${trailId}:`, err);
+      error.value = err.message || `Failed to create mock ratings for trail ${trailId}`;
       return [];
     } finally {
       loading.value = false;
@@ -269,39 +338,16 @@ export function useRatings() {
   const hasUserRatedTrail = async (trailId: string) => {
     if (!user.value) return false;
     
-    // First check if it's in the local ratings data
-    if (ratings.value.length > 0) {
-      const found = ratings.value.some(r => r.trail_id === trailId);
-      console.log(`[DEBUG] Ratings local check for trail ${trailId}: ${found ? 'Found in local state' : 'Not in local state'}`);
-      return found;
+    // Make sure ratings are loaded
+    if (ratings.value.length === 0) {
+      console.log(`[DEBUG] No local ratings, loading mock ratings first`);
+      await fetchUserRatings();
     }
     
-    console.log(`[DEBUG] No local ratings, checking database for trail ${trailId}`);
-    
-    try {
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .select('id')
-        .eq('trail_id', trailId)
-        .eq('user_id', user.value.id);
-        
-      if (err) throw err;
-      
-      // Check if any rows were returned
-      const found = Array.isArray(data) && data.length > 0;
-      console.log(`[DEBUG] Ratings database check result: ${found ? 'Found' : 'Not found'}, rows: ${data?.length || 0}`);
-      
-      // If found but not in local state, refresh local state
-      if (found && ratings.value.length === 0) {
-        console.log(`[DEBUG] Found rating in database but local cache empty, refreshing ratings`);
-        fetchUserRatings();
-      }
-      
-      return found;
-    } catch (err) {
-      console.error(`Error checking if user rated trail ${trailId}:`, err);
-      return false;
-    }
+    // Check if it's in the local ratings data
+    const found = ratings.value.some(r => r.trail_id === trailId);
+    console.log(`[DEBUG] Ratings check for trail ${trailId}: ${found ? 'Found' : 'Not found'}`);
+    return found;
   };
   
   // Get user's rating for a specific trail
@@ -309,18 +355,17 @@ export function useRatings() {
     if (!user.value) return null;
     
     try {
-      const { data, error: err } = await supabase
-        .from('ratings')
-        .select('*')
-        .eq('trail_id', trailId)
-        .eq('user_id', user.value.id);
-        
-      if (err) throw err;
+      console.log(`[DEBUG] Mock client: Would get user rating for trail ${trailId}`);
       
-      // Return the first rating if found
-      return data && data.length > 0 ? data[0] : null;
+      // Make sure ratings are loaded
+      if (ratings.value.length === 0) {
+        await fetchUserRatings();
+      }
+      
+      // Check local state for the rating
+      return ratings.value.find(r => r.trail_id === trailId) || null;
     } catch (err) {
-      console.error(`Error fetching user rating for trail ${trailId}:`, err);
+      console.error(`Error getting mock user rating for trail ${trailId}:`, err);
       return null;
     }
   };

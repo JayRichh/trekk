@@ -105,11 +105,17 @@ defineEmits<{
 
 const { isLoggedIn } = useAuth();
 
-// Generate trail image URL using Lorem Picsum
+// Generate trail image URL following consistent pattern across app:
+// IMPORTANT: Always generate a unique image URL for each trail based on ID
+// rather than using the default URL from the API data
 const trailImageUrl = computed(() => {
-  if (!props.trail) return getDefaultTrailImage(400, 200);
+  // Return default image if no trail or if trail.id is undefined
+  if (!props.trail || !props.trail.id) {
+    return getDefaultTrailImage(400, 200);
+  }
   
-  return props.trail.imageUrl || getTrailImageUrl(props.trail.id, 400, 200);
+  // Always use our utility function to ensure unique, consistent images
+  return getTrailImageUrl(props.trail.id, 400, 200);
 });
 
 // Event handlers for trail actions

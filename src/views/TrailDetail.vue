@@ -1,7 +1,7 @@
 <template>
-  <div class="pb-8">
+  <div class="pb-8 animate-fade-in">
     <div class="container mx-auto px-4" v-if="trail">
-      <div class="my-6 flex gap-4">
+      <div class="my-6 flex gap-4 md:gap-6">
         <router-link to="/trails" class="flex items-center text-gray-500 text-sm">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
             <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 6l-6 6l6 6"/>
@@ -17,20 +17,48 @@
         </button>
       </div>
       
-      <div class="mb-8">
-        <!-- Hero image section -->
+      <div class="mb-10">
+        <!-- Hero image section with improved styling -->
         <div class="mb-6 relative">
-          <div class="h-60 md:h-80 lg:h-96 rounded-lg overflow-hidden">
+          <div class="h-60 md:h-80 lg:h-96 rounded-lg overflow-hidden shadow-lg">
             <div 
               class="w-full h-full bg-cover bg-center"
               :style="{ backgroundImage: `url(${trailImageUrl})` }"
             ></div>
+            <!-- Add a gradient overlay on the image -->
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            
+            <!-- Trail name overlay on the image -->
+            <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
+              <h1 class="text-4xl md:text-5xl font-bold mb-2 drop-shadow-md">{{ trail.name }}</h1>
+              <div class="flex flex-wrap items-center gap-4 mb-3">
+                <div class="px-3 py-1.5 rounded text-sm font-semibold uppercase shadow-sm"
+                  :class="{
+                    'bg-green-500 text-white': trail.difficulty === 'easy',
+                    'bg-yellow-500 text-gray-800': trail.difficulty === 'moderate',
+                    'bg-orange-500 text-white': trail.difficulty === 'difficult',
+                    'bg-red-500 text-white': trail.difficulty === 'extreme'
+                  }">
+                  {{ trail.difficulty }}
+                </div>
+                <div v-if="trail.reviews && trail.reviews.length" class="flex items-center text-sm text-white">
+                  <svg class="text-yellow-400 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="currentColor" d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                  </svg>
+                  <span>{{ getAverageRating(trail) }}</span>
+                  <span class="ml-1">({{ trail.reviews.length }} reviews)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
-        <div>
-          <h1 class="text-4xl font-bold text-primary mb-2">{{ trail.name }}</h1>
-          <div class="flex items-center gap-4 mb-3">
+        <div class="mt-4">
+          <!-- Trail description summary -->
+          <p class="text-lg text-gray-700 mb-6">{{ trail.description?.substring(0, 200) }}{{ trail.description && trail.description.length > 200 ? '...' : '' }}</p>
+          
+          <!-- Trail Actions -->
+          <div class="flex items-center gap-3 mb-5">
             <div class="px-2 py-1 rounded text-xs font-semibold uppercase"
               :class="{
                 'bg-green-500 text-white': trail.difficulty === 'easy',
@@ -64,9 +92,10 @@
         </div>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <div class="bg-white rounded-lg p-4 shadow-md flex items-center">
-          <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4">
+      <!-- Key stats cards with improved styling -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+        <div class="bg-white rounded-lg p-5 shadow-lg border border-gray-100 flex items-center transform transition-transform hover:scale-105">
+          <div class="w-14 h-14 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-4 shadow-inner">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19h18M5 17h.01M7 10h.01M11 13h.01M13 7h.01M17 13h.01M19 7l-4 6 -4 -3 -4 6"/>
             </svg>
@@ -77,8 +106,8 @@
           </div>
         </div>
         
-        <div class="bg-white rounded-lg p-4 shadow-md flex items-center">
-          <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4">
+        <div class="bg-white rounded-lg p-5 shadow-lg border border-gray-100 flex items-center transform transition-transform hover:scale-105">
+          <div class="w-14 h-14 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-4 shadow-inner">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M22 13.5V12l-9.5 -7L3 12v1.5m18 0l-9.5 7L3 13.5m18 0v7.5h-18v-7.5"/>
             </svg>
@@ -89,8 +118,8 @@
           </div>
         </div>
         
-        <div class="bg-white rounded-lg p-4 shadow-md flex items-center">
-          <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4">
+        <div class="bg-white rounded-lg p-5 shadow-lg border border-gray-100 flex items-center transform transition-transform hover:scale-105">
+          <div class="w-14 h-14 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-4 shadow-inner">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
               <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 12L12 7M12 12L16 14"/>
             </svg>
@@ -102,14 +131,14 @@
         </div>
       </div>
       
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div class="lg:col-span-2">
-          <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
             <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">About this trail</h2>
             <p class="text-gray-700">{{ trail.description }}</p>
           </div>
         
-          <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
             <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Interactive Map</h2>
             <div class="h-[300px] rounded-md overflow-hidden mb-4" ref="trailMapContainer"></div>
             <div class="flex gap-2">
@@ -128,7 +157,7 @@
             </div>
           </div>
           
-          <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
             <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Elevation Profile</h2>
             <div class="h-[200px] w-full" ref="elevationProfileContainer">
               <div class="h-full flex flex-col">
@@ -153,11 +182,11 @@
             </div>
           </div>
           
-          <div class="bg-white rounded-lg p-6 shadow-md mb-6">
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
             <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Trail Conditions</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="flex items-start">
-                <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+              <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 shadow-inner">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 15l8 -8l4 4l6 -6M6.5 15h-3v-3M19 6v3h3"/>
                   </svg>
@@ -169,7 +198,7 @@
               </div>
               
               <div class="flex items-start">
-                <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+              <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 shadow-inner">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c-4.4 0 -8 3.6 -8 8s3.6 8 8 8s8 -3.6 8 -8s-3.6 -8 -8 -8M12 11l0 -8M12 12l3.535 -3.535"/>
                   </svg>
@@ -181,7 +210,7 @@
               </div>
               
               <div class="flex items-start">
-                <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+              <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 shadow-inner">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 7l2 -2M15 3h4v4M19 21l-4 -4l4 -4M7 9l-2 2M3 9h4v4M3 3l4 4L3 11M7 15l-2 2M3 15h4v4M12 16a4 4 0 1 0 0 -8a4 4 0 0 0 0 8z"/>
                   </svg>
@@ -193,7 +222,7 @@
               </div>
               
               <div class="flex items-start">
-                <div class="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center mr-2">
+              <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 shadow-inner">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c-1 -1.5 -2 -3 -2 -4.5c0 -2.5 2 -4.5 4.5 -4.5s4.5 2 4.5 4.5c0 1.5 -1 3 -2 4.5M15 13a6 6 0 1 0 -6 6h6"/>
                   </svg>
@@ -201,6 +230,286 @@
                 <div class="flex-grow">
                   <h3 class="text-sm font-semibold text-primary mb-1">Cell Reception</h3>
                   <p class="text-xs text-gray-500">{{ trail.cellReception || 'Spotty. Download maps for offline use before your hike.' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- New sections: Recommended campsites -->
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
+            <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Recommended Campsites</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Campsite 1 -->
+              <div class="border border-gray-200 rounded-md p-4 hover:shadow-md transition-shadow">
+                <h3 class="font-semibold text-primary-600 mb-1">Pine Valley Camp</h3>
+                <div class="flex items-center text-sm text-gray-500 mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6l-6 6"/>
+                  </svg>
+                  <span>2.4 km from trailhead</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-2">Family-friendly campsite with picnic tables and fire rings. Water available on-site.</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex">
+                    <span class="text-yellow-400">★★★★</span><span class="text-gray-300">★</span>
+                  </div>
+                  <span class="text-xs text-gray-500">$15/night</span>
+                </div>
+              </div>
+              
+              <!-- Campsite 2 -->
+              <div class="border border-gray-200 rounded-md p-4 hover:shadow-md transition-shadow">
+                <h3 class="font-semibold text-primary-600 mb-1">Riverside Retreat</h3>
+                <div class="flex items-center text-sm text-gray-500 mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6l6 6l-6 6"/>
+                  </svg>
+                  <span>5.1 km along trail</span>
+                </div>
+                <p class="text-xs text-gray-600 mb-2">Secluded spots along the river. Limited facilities. Pack in, pack out.</p>
+                <div class="flex items-center justify-between">
+                  <div class="flex">
+                    <span class="text-yellow-400">★★★★★</span>
+                  </div>
+                  <span class="text-xs text-gray-500">Free (permit req.)</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-4 text-sm text-gray-500 italic">
+              Note: Campsite information will be updated regularly with our upcoming campsite API.
+            </div>
+          </div>
+          
+          <!-- Recommended gear/items -->
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
+            <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Recommended Gear</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div class="flex items-start">
+                <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 flex-shrink-0 shadow-inner">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"/>
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-primary-600 mb-1">Essential Gear</h3>
+                  <ul class="text-xs text-gray-600 space-y-1 list-disc ml-4">
+                    <li>Hiking boots with good ankle support</li>
+                    <li>Trekking poles for steep sections</li>
+                    <li>Minimum 2L water capacity</li>
+                    <li>Sun protection (hat, sunscreen)</li>
+                    <li>First aid kit</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="flex items-start">
+                <div class="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mr-3 flex-shrink-0 shadow-inner">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 21h8a5 5 0 0 0 5 -5v-3a3 3 0 0 0 -3 -3h-1v-2a5 5 0 0 0 -5 -5h-4a5 5 0 0 0 -5 5v2h-1a3 3 0 0 0 -3 3v3a5 5 0 0 0 5 5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-primary-600 mb-1">Weather-Specific</h3>
+                  <ul class="text-xs text-gray-600 space-y-1 list-disc ml-4">
+                    <li>Rain jacket (even in summer)</li>
+                    <li>Insulated layer for early morning starts</li>
+                    <li>Bug repellent (high season)</li>
+                    <li>Microspikes (winter/early spring)</li>
+                    <li>Gaiters for muddy sections</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-6">
+              <h3 class="font-semibold text-primary-600 mb-2">Recommended Navigation</h3>
+              <div class="flex flex-wrap gap-3">
+                <div class="bg-gray-100 rounded-md px-3 py-1.5 text-xs text-gray-700 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1 text-primary">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7l6-3l6 3l6-3v13l-6 3l-6-3l-6 3V7z M9 4v13 M15 7v13"/>
+                  </svg>
+                  Trekk Offline Maps
+                </div>
+                <div class="bg-gray-100 rounded-md px-3 py-1.5 text-xs text-gray-700 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1 text-primary">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18.5l-3-1.5l-6 3v-13l6-3l6 3l6-3v7.5 M9 4v13 M15 7v5.5 M18 18a3 3 0 1 0 0-6a3 3 0 0 0 0 6z M20.2 20.2l1.8 1.8"/>
+                  </svg>
+                  GPS Device
+                </div>
+                <div class="bg-gray-100 rounded-md px-3 py-1.5 text-xs text-gray-700 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1 text-primary">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0 M14.8 9a2 2 0 0 0 -1.8 -1h-2a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-2a2 2 0 0 1 -1.8 -1"/>
+                  </svg>
+                  Compass
+                </div>
+                <div class="bg-gray-100 rounded-md px-3 py-1.5 text-xs text-gray-700 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" class="mr-1 text-primary">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.875 12C19.875 12 19.875 12 19.875 12C19.875 16.5563 16.5563 20.25 12 20.25C7.44365 20.25 4.125 16.5563 4.125 12C4.125 7.44365 7.44365 3.75 12 3.75C16.5563 3.75 19.875 7.44365 19.875 12Z"/>
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.75V12L15 15"/>
+                  </svg>
+                  Portable Charger
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Seasonal Information -->
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
+            <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Seasonal Information</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-primary-600 mb-3">Best Seasons</h3>
+                <div class="flex mb-4">
+                  <div class="flex-1 text-center">
+                    <div class="rounded-md h-3 mx-2 mb-1" :class="{ 'bg-green-500': true, 'bg-gray-200': false }"></div>
+                    <div class="text-xs font-medium">Spring</div>
+                  </div>
+                  <div class="flex-1 text-center">
+                    <div class="rounded-md h-3 mx-2 mb-1" :class="{ 'bg-green-500': true, 'bg-gray-200': false }"></div>
+                    <div class="text-xs font-medium">Summer</div>
+                  </div>
+                  <div class="flex-1 text-center">
+                    <div class="rounded-md h-3 mx-2 mb-1" :class="{ 'bg-green-500': true, 'bg-gray-200': false }"></div>
+                    <div class="text-xs font-medium">Fall</div>
+                  </div>
+                  <div class="flex-1 text-center">
+                    <div class="rounded-md h-3 mx-2 mb-1" :class="{ 'bg-green-500': false, 'bg-gray-200': true }"></div>
+                    <div class="text-xs font-medium">Winter</div>
+                  </div>
+                </div>
+                
+                <div class="text-xs text-gray-600 mb-4">
+                  <p>This trail is best experienced from late spring through early fall. Wildflowers peak in June, while fall colors are spectacular in late September.</p>
+                </div>
+                
+                <h3 class="font-semibold text-primary-600 mb-2">Weather Considerations</h3>
+                <div class="text-xs text-gray-600 space-y-2">
+                  <p><span class="font-medium">Summer:</span> Temperatures can reach 85°F (29°C) at lower elevations. Start early to avoid afternoon heat.</p>
+                  <p><span class="font-medium">Fall:</span> Cooler temperatures but variable weather. Bring layers and check forecast.</p>
+                  <p><span class="font-medium">Winter:</span> Not recommended due to snow coverage and avalanche risk.</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 class="font-semibold text-primary-600 mb-3">Trail Conditions by Season</h3>
+                <div class="mb-4">
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Spring</span>
+                    <span>Muddy sections, snow at higher elevations until May</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-yellow-500 h-1.5 rounded-full" style="width: 70%"></div>
+                  </div>
+                </div>
+                
+                <div class="mb-4">
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Summer</span>
+                    <span>Dry, excellent conditions</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-green-500 h-1.5 rounded-full" style="width: 95%"></div>
+                  </div>
+                </div>
+                
+                <div class="mb-4">
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Fall</span>
+                    <span>Variable weather, stunning foliage</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-green-500 h-1.5 rounded-full" style="width: 90%"></div>
+                  </div>
+                </div>
+                
+                <div class="mb-4">
+                  <div class="flex justify-between text-xs font-medium mb-1">
+                    <span>Winter</span>
+                    <span>Snow-covered, advanced skills required</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-1.5">
+                    <div class="bg-red-500 h-1.5 rounded-full" style="width: 30%"></div>
+                  </div>
+                </div>
+                
+                <div class="text-xs text-gray-500 italic mt-4">
+                  Trail conditions updated monthly and after significant weather events.
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Wildlife & Nature -->
+          <div class="bg-white rounded-lg p-6 shadow-lg border border-gray-100 mb-6">
+            <h2 class="text-xl font-semibold text-primary mb-4 pb-2 border-b border-gray-200">Wildlife & Nature</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <h3 class="font-semibold text-primary-600 mb-2">Flora Highlights</h3>
+                <ul class="text-xs text-gray-600 space-y-1.5">
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Alpine wildflowers (peak in June-July)
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Old-growth pine forest
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Riparian vegetation near creek crossings
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                    Aspen groves with spectacular fall colors
+                  </li>
+                </ul>
+                
+                <h3 class="font-semibold text-primary-600 mb-2 mt-4">Geological Features</h3>
+                <p class="text-xs text-gray-600">
+                  This trail passes through spectacular granite formations, with dramatic viewpoints overlooking glacier-carved valleys. Several sections feature exposed bedrock dating back millions of years.
+                </p>
+              </div>
+              
+              <div>
+                <h3 class="font-semibold text-primary-600 mb-2">Wildlife Viewing</h3>
+                <p class="text-xs text-gray-600 mb-3">
+                  This area is home to diverse wildlife. Keep your distance and never feed wild animals.
+                </p>
+                <ul class="text-xs text-gray-600 space-y-1.5">
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    Black bears (active spring-fall)
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    Mule deer (common year-round)
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    Golden eagles (look skyward at higher elevations)
+                  </li>
+                  <li class="flex items-center">
+                    <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span>
+                    Various songbirds (best viewing at dawn)
+                  </li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-5">
+              <div class="flex items-start">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" class="text-yellow-600 mr-2 flex-shrink-0 mt-0.5">
+                  <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v.01m-1-13.27l-7.5 7.5a2.12 2.12 0 0 0 0 3l3.5 3.5a2.12 2.12 0 0 0 3 0l7.5-7.5a2.12 2.12 0 0 0 0-3l-3.5-3.5a2.12 2.12 0 0 0-3 0z"/>
+                </svg>
+                <div class="flex-grow">
+                  <h3 class="text-sm font-semibold text-primary-600 mb-1">Wildlife Safety</h3>
+                  <p class="text-xs text-gray-600">Store food properly and make noise while hiking to avoid surprising wildlife. Carry bear spray in bear country and know how to use it.</p>
                 </div>
               </div>
             </div>
@@ -223,7 +532,7 @@
       </div>
     </div>
     
-    <div v-else class="flex flex-col items-center justify-center h-[300px] text-gray-500">
+    <div v-if="!trail" class="flex flex-col items-center justify-center h-[300px] text-gray-500">
       <!-- Content-specific loading spinner (not a full-page loader) -->
       <div class="bg-white p-4 rounded-lg shadow-md">
         <LoadingSpinner 
@@ -335,11 +644,17 @@ function updateContentProgress(progress: number, text: string): void {
 // Authentication state
 const { isLoggedIn } = useAuth();
 
-// Generate trail image URL using Lorem Picsum
+// Generate trail image URL using consistent pattern:
+// 1. Check if trail exists
+// 2. Use trail's imageUrl if available
+// 3. Otherwise generate a URL using the trail ID for consistency across the app
 const trailImageUrl = computed(() => {
-  if (!trail.value) return getDefaultTrailImage(1200, 600);
+  if (!trail.value) {
+    return getDefaultTrailImage(1200, 600);
+  }
   
-  return trail.value.imageUrl || getTrailImageUrl(trail.value.id, 1200, 600, { blur: 1 });
+  // Always use our utility function to ensure unique, consistent images
+  return getTrailImageUrl(trail.value.id, 1200, 600, { blur: 1 });
 });
 
 // Review form
@@ -631,3 +946,14 @@ const submitReview = async () => {
   }
 };
 </script>
+
+<style scoped>
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+</style>
