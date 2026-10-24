@@ -101,7 +101,7 @@ import MetaTags from './components/shared/MetaTags.vue';
 import AppFooter from './components/shared/AppFooter.vue';
 import RouterViewWrapper from './components/shared/RouterViewWrapper.vue';
 
-const { isLoggedIn, userProfile, user } = useAuth();
+const { isLoggedIn, userProfile } = useAuth();
 const { fetchUserWishlist } = useWishlist();
 const { fetchUserGoals } = useGoals();
 const { fetchUserRatings } = useRatings();
