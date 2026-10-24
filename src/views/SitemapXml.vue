@@ -16,7 +16,7 @@ function setXmlContentType() {
 }
 
 function generateSitemapXml(trails: Trail[]): string {
-  const baseUrl = 'https://trekk.example.com';
+  const baseUrl = 'https://trekk-seven.vercel.app';
   const currentDate = new Date().toISOString().split('T')[0];
   
   // Start XML content
